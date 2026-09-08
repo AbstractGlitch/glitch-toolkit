@@ -20,6 +20,18 @@ Honest limits, stated up front:
     not necessarily that they are still in it.
   * It does not lock anything. It tells you; you decide.
 """
+# Lazy annotations, so this file imports on Python 3.9.
+#
+# The signatures below use `X | None`, which is PEP 604 and needs 3.10. A def's
+# annotations are evaluated when the def runs, so without this line the module
+# raises TypeError at IMPORT on 3.9 — not at call, which is why it looked fine
+# to anyone reading it. CI caught it on the floor version the first time it ran.
+#
+# This is a shipped artifact: it gets copied into a reader's repository and run
+# with THEIR interpreter, which `requires-python` does not govern. So it should
+# import as far back as it can rather than as far back as the installer allows.
+from __future__ import annotations
+
 import argparse
 import fnmatch
 import glob

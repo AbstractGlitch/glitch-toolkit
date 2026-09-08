@@ -53,34 +53,71 @@ jobs:
           # were run by hand on Windows that day and passed; this keeps that
           # true rather than leaving it a one-off.
           - os: windows-latest
-            python: "3.12"
+            # 3.13, because that is what the owner's own Windows machine runs and
+            # a reader like them is the configuration worth covering.
+            python: "3.13"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
-      - name: Install the package, and nothing else
+      - name: Record what was installed before we touch anything
+        # The measurement has to be a DELTA, not a census. The first version of
+        # this guard listed everything pip could see after the install and
+        # failed on anything that was not glitch-toolkit. That passed on Linux
+        # and failed on the Windows runner, whose image ships pipx and its
+        # dependencies (argcomplete, click, colorama, filelock, packaging,
+        # platformdirs, userpath) in the same interpreter. None of them came
+        # from this package. A check that fires on a healthy repository is as
+        # broken as one that never fires, so it now compares before with after.
         run: |
           python -m pip install --upgrade pip
-          python -m pip install .
+          # A path in the workspace, not /tmp. Git Bash on the Windows runner
+          # maps /tmp somewhere the Windows Python reading it would not find,
+          # which is the same cross-platform assumption this guard exists to
+          # stop making.
+          python -m pip freeze > pip-before.txt
+          echo "packages present before installing the package: $(wc -l < pip-before.txt)"
+      - name: Install the package, and nothing else
+        run: python -m pip install .
       - name: Prove the base install pulled in no dependencies
         # The README says "no dependencies" and RELEASING.md calls it a promise
         # rather than an accident. Asserted here instead of trusted.
         run: |
           python - <<'PY'
           import subprocess, sys
-          out = subprocess.run([sys.executable, "-m", "pip", "freeze"],
-                               capture_output=True, text=True).stdout
-          extra = [l for l in out.splitlines()
-                   if l.strip() and not l.lower().startswith("glitch-toolkit")]
-          if extra:
-              print("::error::the base install brought in: " + ", ".join(extra))
+
+          def names(text):
+              out = set()
+              for line in text.splitlines():
+                  line = line.strip()
+                  if not line or line.startswith("#"):
+                      continue
+                  for sep in (" @ ", "==", " ", "<", ">"):
+                      if sep in line:
+                          line = line.split(sep, 1)[0]
+                          break
+                  out.add(line.strip().lower().replace("_", "-"))
+              return out
+
+          before = names(open("pip-before.txt").read())
+          after = names(subprocess.run(
+              [sys.executable, "-m", "pip", "freeze"],
+              capture_output=True, text=True).stdout)
+
+          added = sorted(after - before - {"glitch-toolkit"})
+          if added:
+              print("::error::installing the package added: " + ", ".join(added))
               raise SystemExit(1)
-          print("base install is dependency-free")
+          print("the install added nothing but glitch-toolkit itself")
           PY
       - name: test_cli.py
         run: python tests/test_cli.py
       - name: test_ledger.py
+        # always(), so a failure in test_cli.py cannot mark this one "skipped"
+        # and hide a second failure behind the first. On the 3.9 run that found
+        # the PEP 604 crash, the ledger suite never reported at all.
+        if: always()
         run: python tests/test_ledger.py
 
   full:

@@ -6,8 +6,9 @@ went through and the record of what was decided before it.
 
 ## 0.1.1 — why there is a second release so soon
 
-Nothing about the code changed. Three things about the package did, and none
-of them could reach a reader without a release.
+Four corrections, none of which could reach a reader without a release. Three
+are metadata; the fourth is a real bug in two shipped scripts that CI found
+before the upload.
 
 **The description.** The README is the PyPI project description and it is baked
 into the uploaded distribution, so editing it on GitHub changes nothing on
@@ -31,9 +32,32 @@ moved with the builder instead of with the installation. `.gitattributes` now
 pins the working tree to LF on every platform, and the `dist` job fails on any
 CRLF in a built distribution.
 
-All three of these were wrong from the first commit and stayed wrong through a
-release, because nothing ran that could contradict them. That is the argument
-for the change below.
+Each was wrong from the first commit and stayed wrong through a release, because
+nothing ran that could contradict it. That is the argument for the change below
+— and the next two entries are what happened the first time something did.
+
+**The floor was wrong a second time, and CI found it within a minute.** `>=3.9`
+was still not right. Two of the six shipped scripts — `check_lanes.py` and
+`gate_check.py` — annotate with `X | None`, which is PEP 604 and needs 3.10. A
+def's annotations are evaluated when the def runs, so those files raised
+`TypeError` at IMPORT on 3.9, not at call, which is why reading them told nobody
+anything. `core · ubuntu · py3.9` went red on the first CI run that ever
+existed, before 0.1.1 was uploaded.
+
+Fixed with `from __future__ import annotations` in both, rather than by raising
+`requires-python` to 3.10. The floor governs `pip install`; it does not govern
+the artifacts, which are copied into a reader's repository and run with THEIR
+interpreter. Dropping 3.9 to avoid a two-line fix would have inverted the
+package's own argument. The same edit went into `site/toolkit/scripts/`, which
+is byte-identical by contract.
+
+**And the guard beside it was broken in the other direction.** The
+dependency-free check listed everything pip could see after installing and
+failed on anything that was not `glitch-toolkit`. That is a census, not a delta.
+It passed on Linux and failed on the Windows runner, whose image ships pipx and
+seven of its dependencies in the same interpreter — none of them from this
+package. A check that fires on a healthy repository is as broken as one that
+never fires. It now records `pip freeze` before the install and compares.
 
 ## CI, and the five checks it takes off this list
 
@@ -44,9 +68,10 @@ repository a stranger can actually open a pull request against.
 
 It automates five things that were previously "remember to do it":
 
-- the three suites, on 3.9, 3.12 and 3.13, plus **Windows on 3.12** — the 28
-  dependency-free tests had only ever run on Linux until they were run by hand
-  on Windows on 2026-09-08 and passed, against a CRLF working tree;
+- the three suites, on Linux 3.9, 3.12 and 3.13, plus **Windows on 3.13** — the
+  28 dependency-free tests had only ever run on Linux until they were run by hand
+  on Windows on 2026-09-08 and passed, against a CRLF working tree. 3.13 because
+  that is what the owner's own Windows machine runs;
 - **the sdist carries `tests/run_all.py`, `LICENSE` and `NOTICE`**;
 - **the wheel says `License-Expression: Apache-2.0`, carries no
   `Private :: Do Not Upload` classifier, and no longer describes itself as
