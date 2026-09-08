@@ -285,6 +285,40 @@ def check_plan(root):
         else:
             r.note("refuses a plan nobody could fail, which is the whole job")
 
+        # The second refusal, and the narrow one. The plan above fails several
+        # ways at once, so it would still be rejected by a checker that had lost
+        # any single test. This one is complete, approved by somebody other than
+        # its author, and verified by something that can come back false. Its
+        # only defect is a step that states its own price.
+        #
+        # 8 September 2026: a distribution plan tagged a step "mechanical, no
+        # writing, no judgement". It cost two releases, neither knowable from
+        # the plan. The word was an estimate wearing the clothes of a fact.
+        priced = box / "priced.md"
+        priced.write_text(
+            "## Plan: List the package on the registries\n\n"
+            "**Written** 2026-09-08 by A Writer\n"
+            "**Approved** 2026-09-08 by A Reviewer\n\n"
+            "### What we are NOT doing\n\n"
+            "- Publishing the incident writeup; that is its own decision.\n"
+            "- Building a plugin wrapper for any client.\n\n"
+            "### What we ARE doing\n\n"
+            "- List on the official MCP registry. Mechanical, no writing, no judgement.\n\n"
+            "### How we will know it worked\n\n"
+            "- The registry API returns the server at the version named with status active.\n",
+            encoding="utf-8",
+        )
+        code, out = _run([sys.executable, str(script), "check", str(priced)], box)
+        if code == 0:
+            r.fail(
+                "plan_check.py accepted a step that called itself mechanical with "
+                "nothing in the plan measuring that. An unmeasured price is the one "
+                "claim in a plan that cannot come back false until you are at the "
+                "far end of the work."
+            )
+        else:
+            r.note("refuses a step that states a price nothing measured")
+
     return r
 
 
@@ -643,6 +677,29 @@ def check_gates(root):
             )
         else:
             r.note("catches a green run that reported no count, which is the whole job")
+
+        # The second canary. A runner that says what it ran AND says what it
+        # skipped, then exits 0. Observed on 8 Sep 2026 in this package's own
+        # test runner: "1 suite(s) skipped. That is not a pass." followed by
+        # exit 0, and the gate answered "trustworthy green" while reporting the
+        # first suite's count as the total. Ten tests unrun, certified.
+        #
+        # A skip is not a failure, so the right verdict is WARN rather than
+        # FAIL: green, unproven, and non-zero unless the caller passes
+        # --warn-ok to accept it deliberately.
+        code, out = _run(
+            [sys.executable, str(script), "run", "--name", "glitch-skip", "--quiet", "--",
+             sys.executable, "-c", "print('18 passed'); print('1 suite(s) skipped')"],
+            box,
+        )
+        if code == 0:
+            r.fail(
+                "gate_check.py called a run trustworthy that announced a skipped "
+                "suite and exited 0. A count that excludes what was skipped is "
+                "not a count, and on this installation the gate cannot see it."
+            )
+        else:
+            r.note("catches a green run that quietly left a suite out")
 
     return r
 

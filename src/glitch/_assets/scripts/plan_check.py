@@ -33,6 +33,9 @@ WHAT THIS CANNOT DO:
   * It does not know whether the work matches the plan. Nothing here reads your
     diff. That disagreement is what the deviation log is for, and a deviation
     nobody writes down is invisible to this too.
+  * The cost list is the same kind of list and has the same limit. It catches
+    a plan asserting how hard something is; it cannot tell whether the
+    assertion is true. Only doing the work does that.
   * The weak-verification list is a list of phrases, not comprehension. It
     catches the common ways a check is written so it can never fail. It will
     miss a new one.
@@ -90,6 +93,37 @@ WEAK = [
     "code review",
     "manual check",
     "we are happy with it",
+]
+
+# Claims about cost that nothing measured. The sibling of WEAK: that list is
+# about a check written so it cannot fail, this one is about a step written so
+# its price cannot come back higher than stated.
+#
+# The instance, 8 September 2026. A distribution plan carried a step tagged
+# "mechanical, no writing, no judgement, the only step with no downside if the
+# rest is abandoned". Doing it cost two releases: the registry proved package
+# ownership with a marker baked into a distribution that cannot be re-uploaded,
+# and then the marker was spelled with the wrong capital letter. Neither was
+# knowable from the plan, which is the point — the word "mechanical" was an
+# estimate wearing the clothes of a fact, and nothing in the document could
+# contradict it.
+#
+# A cost is allowed to be stated. It is not allowed to be stated as though it
+# were known, without saying what makes it known.
+COST = [
+    "mechanical",
+    "no judgement",
+    "no judgment",
+    "trivial",
+    "straightforward",
+    "should be quick",
+    "should be easy",
+    "no downside",
+    "just a matter of",
+    "drop-in",
+    "one-liner",
+    "low risk",
+    "nothing to it",
 ]
 
 # Softeners. Same argument as the hedge list in rules_check.py: a hedged check
@@ -244,6 +278,19 @@ def judge(plan):
     if not real_doing:
         out.append((plan.are_doing[0][0] if plan.are_doing else 0, "What we ARE doing",
                     "nothing here that is not a placeholder."))
+    else:
+        # Cost claims in the scope section. See COST above for why.
+        for line_no, text in plan.are_doing:
+            if PLACEHOLDER.search(text):
+                continue
+            low = text.lower()
+            hit = [c for c in COST if c in low]
+            if hit:
+                out.append((line_no, text,
+                            "'{}' states a cost that nothing here measured. Say what\n"
+                            "            makes it cheap, or drop the word: a step that turns out\n"
+                            "            expensive is discovered at the far end of it."
+                            .format(hit[0])))
 
     # 4. Verification. The reason this file is checked at all: these are written
     #    before the work, while you still want them to be hard.

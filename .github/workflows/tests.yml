@@ -150,6 +150,28 @@ jobs:
             echo "::error::the server suite did not report ok, so the [mcp] extra is not doing what this job assumes"
             exit 1
           fi
+      - name: The README's test count must be the number that actually ran
+        # A count maintained by hand in prose is a claim, and this repository
+        # has spent a day on claims nobody checked. It was 38 across four files
+        # while the suites reported 39. This is the only job where nothing
+        # skips, so it is the only one that can say what the number is.
+        run: |
+          python - <<'PY'
+          import pathlib, re
+          ran = sum(int(n) for n in re.findall(r"^(\d+) passed", 
+                    pathlib.Path("suites.txt").read_text(), re.M))
+          readme = pathlib.Path("README.md").read_text()
+          claimed = re.search(r"all three suites, (\d+) tests", readme)
+          if not claimed:
+              print("::error::README.md no longer states a test count in the form "
+                    "'all three suites, N tests', so nothing here can check it")
+              raise SystemExit(1)
+          if int(claimed.group(1)) != ran:
+              print("::error::README.md claims {} tests and the suites ran {}"
+                    .format(claimed.group(1), ran))
+              raise SystemExit(1)
+          print("README and the runner both say {}".format(ran))
+          PY
 
   dist:
     # The three RELEASING.md pre-upload checks that can be automated. They exist

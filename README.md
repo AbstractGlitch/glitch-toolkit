@@ -114,12 +114,22 @@ repaired, because repairing it means rewriting the file.
 ## Tests
 
 ```bash
-python tests/run_all.py      # all three suites, 38 tests
+python tests/run_all.py      # all three suites, 39 tests
 ```
 
 The server suite skips cleanly without the `[mcp]` extra and the runner reports
 that as SKIPPED rather than passing, because a green line meaning "we did not
 look" is the exact failure the gate-check practice exists to catch.
+
+## Where the checks come from
+
+Every check here exists because something went wrong, and
+[CORPUS.md](https://github.com/AbstractGlitch/glitch-toolkit/blob/main/CORPUS.md)
+is the list — what happened, what it cost, and which check catches it now.
+
+It also names the ones nothing here catches yet, including the two that cost
+this package a version number each. A corpus that recorded only its solved
+failures would be doing the thing this package is about.
 
 ## Licence
 

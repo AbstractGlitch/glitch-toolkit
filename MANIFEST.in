@@ -9,6 +9,7 @@ graft tests
 include LICENSE
 include NOTICE
 include README.md
+include CORPUS.md
 
 # Never ship build output or caches, whatever is lying around locally.
 global-exclude __pycache__

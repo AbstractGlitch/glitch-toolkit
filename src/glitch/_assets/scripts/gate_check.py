@@ -7,7 +7,14 @@ Two failures this catches, both observed in the wild:
      pytest became -qq, which deletes the summary line. Every wrapper script
      logged a successful run. Forty tests had never executed anywhere.
 
-  2. THE TREE MOVED. The suite ran while edits landed underneath it, so the
+  2. GREEN WITH A HOLE IN IT. A runner that said what it ran, and did not say
+     what it did not run. The real instance: this package's own test runner
+     prints "1 suite(s) skipped. That is not a pass." and exits 0, because a
+     skipped suite leaves the exit code alone. Pointed at it, an earlier version
+     of THIS FILE answered "trustworthy green" and reported the first suite's
+     count as the total. A count that excludes what was skipped is not a count.
+
+  3. THE TREE MOVED. The suite ran while edits landed underneath it, so the
      result describes a tree that no longer exists. Re-running is not the fix,
      because the next edit arrives during the re-run prompted by the first.
      This is a scheduling problem, not a tooling one.
@@ -58,6 +65,32 @@ COUNT_PATTERNS = [
     ("generic",    re.compile(r"\b(\d+)\s+(?:tests?|specs?|assertions?)\b", re.I)),
     ("go",         re.compile(r"^ok\s+\S+", re.M)),
 ]
+
+# A skip is not a failure and it is not a pass either, so it is a WARN: green,
+# unproven, and the caller decides with --warn-ok. Zero is not a skip, which is
+# why every numeric pattern excludes it rather than matching \d+ and testing
+# afterwards; "0 skipped" is a runner telling you it left nothing out.
+SKIP_PATTERNS = [
+    re.compile(r"\b(?!0\b)(\d+)\s+(?:tests?\s+)?skipped\b", re.I),
+    re.compile(r"\b(?!0\b)(\d+)\s+suite\(?s\)?\s+skipped\b", re.I),
+    re.compile(r"\b(?!0\b)(\d+)\s+(?:pending|todo)\b", re.I),
+]
+# The token on its own line, which is how a runner reports a whole suite it
+# never entered. Anchored so a test NAMED "skipped ..." does not trip it.
+SKIP_TOKEN = re.compile(r"^\s*\S*\s*SKIPPED\s*$", re.M)
+
+
+def detect_skips(output: str) -> str | None:
+    """What the run left out, or None. Returns a description, not a count,
+    because runners report skips in units that are not comparable: tests,
+    suites, files."""
+    for rx in SKIP_PATTERNS:
+        m = rx.search(output)
+        if m:
+            return m.group(0).strip()
+    if SKIP_TOKEN.search(output):
+        return "a suite reported SKIPPED"
+    return None
 
 
 def snapshot(roots: list[str]) -> dict[str, float]:
@@ -123,7 +156,15 @@ def cmd_run(args) -> int:
     else:
         verdicts.append(("ok", f"{runner} reported {count}"))
 
-    # 3. did the tree move underneath it
+    # 3. did it run everything it had
+    skipped = detect_skips(output)
+    if skipped:
+        verdicts.append(("WARN", f"it did not run everything: {skipped}. "
+                                 "The count above excludes it."))
+    else:
+        verdicts.append(("ok", "nothing reported as skipped"))
+
+    # 4. did the tree move underneath it
     changed = [p for p, m in after.items() if before.get(p) != m]
     new = [p for p in after if p not in before]
     moved = sorted(set(changed) | set(new))

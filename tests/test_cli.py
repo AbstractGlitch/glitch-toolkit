@@ -131,6 +131,32 @@ PLAN = """## Plan: move the receipt store off the volume
 # One short circuit per artifact, each chosen to leave it running and exiting 0
 # while removing its ability to refuse. The injected line differs because the
 # functions differ; what they have in common is that nothing errors.
+# The two below are narrower than SABOTAGE and that is the point of them.
+#
+# SABOTAGE guts a whole function: the artifact runs, exits 0 and refuses nothing
+# at all. Real drift does not look like that. It looks like an artifact that
+# still refuses nine things and has quietly stopped refusing the tenth, which
+# the total lobotomy above cannot distinguish from a healthy one. Both entries
+# here remove exactly one ability and leave everything else working.
+#
+# Both are failures observed on 8 September 2026 in this repository.
+PARTIAL_SABOTAGE = [
+    # gate_check stopped noticing that a run left a suite out. Found by pointing
+    # this package's own gate at this package's own test runner: the runner
+    # prints "1 suite(s) skipped. That is not a pass." and exits 0, and the gate
+    # answered "trustworthy green" while reporting the first suite's count as
+    # the total.
+    ("gates", ".claude/toolkit/scripts/gate_check.py",
+     "    skipped = detect_skips(output)", "    skipped = None",
+     "announced a skipped suite"),
+    # plan_check stopped noticing a step that states its own price. The step
+    # tagged "mechanical, no writing, no judgement" cost two releases.
+    ("plan", ".claude/toolkit/scripts/plan_check.py",
+     "COST = [", "COST = []  # gutted\nUNUSED = [",
+     "called itself mechanical"),
+]
+
+
 SABOTAGE = [
     (".claude/toolkit/scripts/check_lanes.py", "def cmd_check(args) -> int:", "    return 0"),
     (".claude/toolkit/scripts/gate_check.py", "def cmd_run(args) -> int:", "    return 0"),
@@ -498,6 +524,50 @@ with tempfile.TemporaryDirectory() as tmp:
 
     check("install keeps an edited artifact, and --force replaces it",
           install_does_not_overwrite)
+
+
+def one_refusal_removed():
+    """Each artifact keeps every ability but one, and must still be caught.
+
+    The step is run on a healthy repo first. That control is the half that
+    matters: a check that fires on a healthy tree is as broken as one that
+    never fires, and this suite would happily prove the wrong thing without
+    it. Both halves are asserted for every entry.
+    """
+    for step, rel, needle, replacement, expected in PARTIAL_SABOTAGE:
+        with tempfile.TemporaryDirectory() as tmp:
+            repo = pathlib.Path(tmp)
+            install(repo)
+
+            code, out = glitch(repo, "check", step)
+            assert code == 0, (
+                "control: step '{}' does not pass on a healthy repo, so the "
+                "sabotage below proves nothing:\n{}".format(step, out)
+            )
+
+            target = repo / rel
+            text = target.read_text(encoding="utf-8")
+            assert needle in text, (
+                "the sabotage for '{}' no longer matches {}: looked for {!r}. "
+                "The artifact changed and this test stopped testing it."
+                .format(step, rel, needle)
+            )
+            target.write_text(text.replace(needle, replacement, 1), encoding="utf-8")
+
+            code, out = glitch(repo, "check", step)
+            assert code != 0, (
+                "step '{}' passed with one refusal removed from {}. It still "
+                "refuses everything else, which is what real drift looks "
+                "like:\n{}".format(step, rel, out)
+            )
+            assert expected in out, (
+                "step '{}' failed, but not for the removed refusal: expected "
+                "{!r} in the output.\n{}".format(step, expected, out)
+            )
+
+
+check("an artifact that lost ONE refusal and kept the rest is still caught",
+      one_refusal_removed)
 
 
 print("")
