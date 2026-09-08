@@ -97,16 +97,35 @@ look" is the exact failure the gate-check practice exists to catch.
 
 ## Licence
 
-Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Chosen over MIT
-for the patent grant.
+Apache License 2.0 — see [LICENSE](https://github.com/AbstractGlitch/glitch-toolkit/blob/main/LICENSE)
+and [NOTICE](https://github.com/AbstractGlitch/glitch-toolkit/blob/main/NOTICE). Chosen over MIT for
+the patent grant.
 
-The licence covers **this directory only**. It was extracted from a repository
-that also holds a commercial book, its shop, and unreleased application code,
-none of which are open source; the `LICENSE` at that repository's root is a
-reservation that grants nothing outside `glitch/`.
+Everything in this repository is under it. Use it commercially, change it,
+redistribute it.
+
+The links above are absolute on purpose: this README is also the package's
+description on PyPI, where a relative link resolves against `pypi.org` and
+returns a 404.
+
+## Where this comes from
+
+This repository is a published mirror. The package is developed inside a private
+monorepo alongside the book *Building Your Store Or Your SaaS With Claude*, whose
+practices it installs and checks, and it is pushed here as a subtree. The book,
+the shop that sells it and the rest of that repository are **not** open source
+and are not here. Nothing is being withheld from this repository that belongs to
+the package.
+
+Issues and pull requests belong here rather than there, because here is the part
+anyone can read.
 
 ## Status
 
-Pre-release. Licensed, but **not published anywhere** — no PyPI release exists
-and the distribution name above is a placeholder that has not been claimed.
-`pip install` from a checkout works today; a package index does not have it.
+Version 0.1.0, the first release. It installs, and the practices it checks are
+the six the book argues for.
+
+What it is not yet: it gates nothing. `glitch-mcp` reports and records and
+cannot block an agent from doing anything. That is deliberate and the reasoning
+is in `mcp_server.py` — a server that stands between an agent and a production
+database should earn its evidence before it earns the power to refuse.

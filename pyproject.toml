@@ -6,9 +6,12 @@
 #
 # The `Private :: Do Not Upload` classifier that used to sit in the list below
 # was removed in the same commit that added LICENSE and NOTICE, which is the
-# condition its own comment set for removing it. Nothing else about publication
-# changed with it: this package has still never been uploaded anywhere, and the
-# name below is a placeholder that has not been claimed.
+# condition its own comment set for removing it.
+#
+# The name was decided on 2026-09-08 and is no longer a placeholder. README.md is
+# this package's description on PyPI, so what it says about publication is a
+# public claim rather than a note to ourselves: rebuild the dist after editing
+# it, or the index serves the previous version of that claim.
 #
 # setuptools>=77 is not cosmetic. `license = "Apache-2.0"` is the PEP 639 SPDX
 # form, and on setuptools 61 to 76 it is read as the old free-text field and the
@@ -44,6 +47,17 @@ dependencies = []
 # so plainly when the SDK is absent rather than dying on an ImportError.
 [project.optional-dependencies]
 mcp = ["mcp>=2.0"]
+
+# Where the PyPI sidebar sends people. Without this table there is no Homepage,
+# no Source and no Issues link, which for a package whose success is measured in
+# issues from strangers is a self-inflicted wound.
+#
+# These point at the PUBLIC mirror, not at the private monorepo the package is
+# developed in. A Source link a stranger cannot open is worse than none.
+[project.urls]
+Homepage = "https://github.com/AbstractGlitch/glitch-toolkit"
+Source = "https://github.com/AbstractGlitch/glitch-toolkit"
+Issues = "https://github.com/AbstractGlitch/glitch-toolkit/issues"
 
 [project.scripts]
 glitch = "glitch.cli:main"
