@@ -142,13 +142,18 @@ Both were settled before the upload, which is the point of listing them as
 decisions rather than steps. 0.1.0 is on PyPI and cannot be replaced; a
 correction is 0.1.1.
 
-**One thing is still outstanding, and 0.1.1 is when to settle it.** The token
-used for the first upload is account-scoped, because a project-scoped one cannot
-exist before the project does. It can now. Before uploading 0.1.1, create a
-token scoped to `glitch-toolkit`, put that one in `.pypirc`, and delete the
-account-scoped token on PyPI rather than merely stopping using it — a revoked
-token cannot be found later in a file nobody remembered. An account-scoped token
-in a plain text file can publish anything on the account.
+**The token is now scoped to this project. Settled 2026-09-08.** The first
+upload used an account-scoped token, because a project-scoped one cannot exist
+before the project does. It was replaced afterwards and the old one was
+**deleted on PyPI**, not merely stopped being used — a token that still works can
+be found later in a file nobody remembered.
+
+Two things to keep doing. The token lives in `$HOME/.pypirc` and is written there
+with an editor, never with `$env:TWINE_PASSWORD` or an inline `Set-Content`,
+both of which put the value into PSReadLine's on-disk history. And nothing
+verifies a PyPI token except an upload, so the current one is untested until the
+next release; if it fails at `twine upload`, generate another rather than
+reaching for an account-scoped one to get unstuck.
 
 ## The console script is not the distribution name
 
