@@ -8,6 +8,13 @@ It is also the honest half. Several entries below are caught by nothing here,
 and they say so. A corpus that only recorded the failures it had already solved
 would be doing the thing this package is about.
 
+**The repositories are named on purpose.** Several entries below name a real, private
+repository of the author's and say exactly what went wrong in it. That was put to the
+owner directly on 8 September 2026 and kept: a corpus that says which repository each
+failure came from is harder to dismiss than the same list anonymised, and there is
+nobody to protect here but the author. Nothing in this file is a credential, a key,
+customer data, revenue or campaign detail, and that boundary does not move.
+
 All of these are from **8 September 2026** unless dated otherwise. One day, one
 repository, eighteen entries. That is not unusual; it is what happens the first
 time anything looks.

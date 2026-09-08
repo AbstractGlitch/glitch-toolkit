@@ -235,7 +235,17 @@ infrastructure detail in the commit MESSAGES, which a subtree split carries over
 verbatim. Then `git push <url> _public_preview:main`.
 
 Do that inspection again if the monorepo ever gains a file under `glitch/` that
-was not written to be read by strangers. A mirror is only as private as the least
+was not written to be read by strangers.
+
+**`CORPUS.md` is not such a file, and this is the note that stops it being read as
+one.** It names `client-acquisition-saas`, `roadmap-studio` and `floor-audit-mcp`,
+describes what went wrong in each, and says the account destroyed on 30 July was the
+author's own. All of that is deliberate and was confirmed by the owner on 2026-09-08,
+after it was already public: the naming is the value of the file, because a failure
+attributed to a real repository is harder to dismiss than the same failure anonymised.
+Anonymising it would undo a decision rather than tidy an oversight, so do not. What the
+inspection above is actually for is unchanged: credentials, keys, customer data,
+revenue, campaign detail, and anything about the book's paid content. A mirror is only as private as the least
 careful push into it, and a public commit cannot be recalled.
 
 ## The steps
