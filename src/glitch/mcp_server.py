@@ -43,7 +43,7 @@ MISSING_SDK = (
     "glitch-mcp needs the Model Context Protocol SDK, which the base package\n"
     "deliberately does not depend on:\n"
     "\n"
-    "    pip install 'abstractglitch-toolkit[mcp]'\n"
+    "    pip install 'glitch-toolkit[mcp]'\n"
     "\n"
     "The checker itself has no dependencies and `glitch` still works without it."
 )

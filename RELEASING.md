@@ -11,14 +11,20 @@ re-used even after a release is deleted. Both of those are decisions, not steps,
 and they belong to the owner rather than to whoever happens to be running the
 commands.
 
-- [ ] **The distribution name.** `pyproject.toml` currently says
-      `abstractglitch-toolkit`, which was a placeholder chosen for a package that
-      was never going to be uploaded. Decide it deliberately. `glitch` itself is
-      taken on PyPI by an unrelated 2016 library for glitching JPEGs.
-- [ ] **The version.** It is `0.1.0.dev0`, and that is honest: `.dev0` is a
-      pre-release, `pip install` skips it without `--pre`, and it says out loud
-      that nothing has shipped. Move it to `0.1.0` in the same commit that
-      publishes, not before.
+- [x] **The distribution name.** Decided 2026-09-08: **`glitch-toolkit`**,
+      checked available on PyPI that day. It was `abstractglitch-toolkit`, a
+      placeholder chosen for a package nobody intended to upload. `glitch`
+      itself is taken by an unrelated 2016 library for glitching JPEGs.
+      Availability was true on the day it was checked and is not a reservation —
+      confirm it again immediately before uploading.
+- [x] **The version.** Moved off `.dev0` to **`0.1.0`** on 2026-09-08, once the
+      name was decided. `.dev0` was honest while the name was open, but it is a
+      pre-release that `pip install` skips without `--pre`, and shipping the
+      first release as something pip ignores by default is a footgun rather
+      than a caution.
+
+Neither of those is publication. **Nothing has been uploaded.** The version says
+`0.1.0` because the package is ready to be one, not because it is one.
 
 ## The console script is not the distribution name
 
@@ -48,7 +54,7 @@ Then, from a clean machine and a clean virtualenv, prove the thing a user will
 actually do rather than the thing you just built:
 
 ```bash
-pip install <name>
+pip install glitch-toolkit
 glitch install
 glitch status
 ```

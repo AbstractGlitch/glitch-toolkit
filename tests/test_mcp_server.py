@@ -30,7 +30,7 @@ try:
     from mcp import ClientSession
     from mcp.client.stdio import StdioServerParameters, stdio_client
 except ImportError:
-    print("skip  the MCP SDK is not installed; run: pip install 'abstractglitch-toolkit[mcp]'")
+    print("skip  the MCP SDK is not installed; run: pip install 'glitch-toolkit[mcp]'")
     sys.exit(0)
 
 from glitch import cli, mcp_server  # noqa: E402

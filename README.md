@@ -48,7 +48,7 @@ needs the rest of the package, and it says so plainly rather than failing oddly.
 ## The MCP server (read-only)
 
 ```bash
-pip install 'abstractglitch-toolkit[mcp]'
+pip install 'glitch-toolkit[mcp]'
 glitch-mcp --repo .
 ```
 

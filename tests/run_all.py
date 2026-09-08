@@ -36,6 +36,6 @@ for name, code, skip in results:
 if skipped:
     print("")
     print("  {} suite(s) skipped. That is not a pass.".format(len(skipped)))
-    print("  For the server suite: pip install 'abstractglitch-toolkit[mcp]'")
+    print("  For the server suite: pip install 'glitch-toolkit[mcp]'")
 print("")
 sys.exit(1 if failed else 0)

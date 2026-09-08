@@ -19,8 +19,8 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "abstractglitch-toolkit"
-version = "0.1.0.dev0"
+name = "glitch-toolkit"
+version = "0.1.0"
 description = "Install and verify bounded-autonomy practices in a repository worked on by AI agents"
 readme = "README.md"
 license = "Apache-2.0"
