@@ -44,7 +44,9 @@ repository a stranger can actually open a pull request against.
 
 It automates five things that were previously "remember to do it":
 
-- the three suites, on 3.9, 3.12 and 3.13;
+- the three suites, on 3.9, 3.12 and 3.13, plus **Windows on 3.12** — the 28
+  dependency-free tests had only ever run on Linux until they were run by hand
+  on Windows on 2026-09-08 and passed, against a CRLF working tree;
 - **the sdist carries `tests/run_all.py`, `LICENSE` and `NOTICE`**;
 - **the wheel says `License-Expression: Apache-2.0`, carries no
   `Private :: Do Not Upload` classifier, and no longer describes itself as

@@ -33,14 +33,27 @@ jobs:
     # The two suites that must pass with nothing installed but the package
     # itself. If these ever need a dependency, the promise in the README is
     # broken and this job is where that surfaces.
-    name: core · py${{ matrix.python }}
-    runs-on: ubuntu-latest
+    name: core · ${{ matrix.os }} · py${{ matrix.python }}
+    runs-on: ${{ matrix.os }}
+    # Heredocs below, and PowerShell is the default shell on the Windows runner.
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest]
         # 3.9 is the real floor: the build backend is setuptools >= 77 (chosen
         # for the PEP 639 licence field) and no such setuptools runs on 3.8.
         python: ["3.9", "3.12", "3.13"]
+        include:
+          # Windows is not a nice-to-have here. The book's audience works in
+          # PowerShell, the owner's own checkout has core.autocrlf=true, and
+          # until 2026-09-08 these 28 tests had only ever run on Linux. They
+          # were run by hand on Windows that day and passed; this keeps that
+          # true rather than leaving it a one-off.
+          - os: windows-latest
+            python: "3.12"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
