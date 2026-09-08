@@ -1,6 +1,28 @@
 # Releasing
 
-**0.1.2 is prepared and NOT released.** It exists for one reason: listing on the
+**0.1.3 is prepared and NOT released, and it exists because of a mistake.**
+The registry namespace is CASE SENSITIVE and follows the GitHub login exactly:
+the grant is `io.github.AbstractGlitch/*`. The entry was written
+`io.github.abstractglitch/...`, lowercased off a documentation example rather
+than off the account holding the grant. Publishing returned 403.
+
+Correcting the entry was not enough. The ownership marker must match the server
+name character for character, and the marker is in the README, which is the
+`long_description` baked into the distribution. 0.1.2 carries the lowercase
+spelling, cannot be re-uploaded, and the registry refused it with:
+
+> the server name 'io.github.AbstractGlitch/glitch-toolkit' must appear as
+> 'mcp-name: io.github.AbstractGlitch/glitch-toolkit' in the package README
+
+So a one-character casing error cost a release. The `dist` job now derives the
+expected namespace from the repository URL's owner segment and fails on a
+mismatch; the version before it only checked that `server.json` and the README
+agreed with each other, and they did — both were wrong in the same direction.
+
+**0.1.2 was released on 2026-09-08.** It carries the marker, spelled wrongly,
+and is superseded rather than withdrawn. It is otherwise identical to 0.1.3.
+
+**Why 0.1.2 existed.** It exists for one reason: listing on the
 official MCP registry requires an `mcp-name: io.github.AbstractGlitch/glitch-toolkit`
 marker in the package README, the README is the `long_description` baked into
 the distribution at build time, and 0.1.1 went up without it. A PyPI version
