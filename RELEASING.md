@@ -4,6 +4,57 @@
 <https://pypi.org/project/glitch-toolkit/0.1.0/>. This file is the checklist it
 went through and the record of what was decided before it.
 
+## 0.1.1 — why there is a second release so soon
+
+Nothing about the code changed. Two things about the package did, and neither
+could reach a reader without a release.
+
+**The description.** The README is the PyPI project description and it is baked
+into the uploaded distribution, so editing it on GitHub changes nothing on
+`pypi.org`. 0.1.0 opened with "Install the practices from *Building Your Store
+Or Your SaaS With Claude*" — which told a stranger who had never heard of the
+book nothing about why they would want this. It now opens with the failure the
+package detects. Since 0.1.0 cannot be re-uploaded, that fix is a version.
+
+**A metadata claim that was never true.** 0.1.0 declared
+`requires-python = ">=3.8"` while its build backend requires `setuptools>=77`,
+and no setuptools at or above 77 runs on 3.8. The wheel would install there; the
+sdist could not build. Corrected to `>=3.9`.
+
+That second one is the argument for the change below, so it is worth naming
+plainly: the claim was wrong from the first commit and stayed wrong through a
+release, because nothing ran that could contradict it.
+
+## CI, and the four checks it takes off this list
+
+`.github/workflows/tests.yml` runs on the public mirror. It lives at
+`glitch/.github/` in the monorepo, which is not a repository root, so GitHub
+ignores it there and runs it after the subtree push — one file, CI on the
+repository a stranger can actually open a pull request against.
+
+It automates four things that were previously "remember to do it":
+
+- the three suites, on 3.9, 3.12 and 3.13;
+- **the sdist carries `tests/run_all.py`, `LICENSE` and `NOTICE`**;
+- **the wheel says `License-Expression: Apache-2.0`, carries no
+  `Private :: Do Not Upload` classifier, and no longer describes itself as
+  unpublished** — the exact three failures that nearly shipped on release day;
+- **the base install pulls in no dependencies**, which the README states as a
+  promise and which was until now only ever true by inspection.
+
+One guard is worth understanding before anyone edits it. `tests/run_all.py`
+exits `1 if failed else 0`, so a SKIPPED suite leaves the exit code at **0**.
+A workflow that only checked the exit code would go green with the ten server
+tests unrun. Verified, not assumed: without the `[mcp]` extra the runner prints
+`test_mcp_server.py SKIPPED` and still exits 0. So the job greps for `SKIPPED`
+and fails on it. Removing that grep re-creates a false green inside the package
+written to catch false greens.
+
+Because the MCP SDK requires Python >= 3.10, the extra cannot be installed on
+the floor version, which is why there are two jobs rather than one matrix: the
+dependency-free promise is tested where it matters and the server where its SDK
+can install.
+
 ## Before anything
 
 Publishing is not reversible in the ways that matter. A distribution name on PyPI
@@ -28,11 +79,13 @@ Both were settled before the upload, which is the point of listing them as
 decisions rather than steps. 0.1.0 is on PyPI and cannot be replaced; a
 correction is 0.1.1.
 
-**One thing is still outstanding.** The token used for the first upload is
-account-scoped, because a project-scoped one cannot exist before the project
-does. Replace it with a token scoped to `glitch-toolkit` and update `.pypirc`,
-or delete `.pypirc` until the next release. An account-scoped token in a plain
-text file can publish anything on the account.
+**One thing is still outstanding, and 0.1.1 is when to settle it.** The token
+used for the first upload is account-scoped, because a project-scoped one cannot
+exist before the project does. It can now. Before uploading 0.1.1, create a
+token scoped to `glitch-toolkit`, put that one in `.pypirc`, and delete the
+account-scoped token on PyPI rather than merely stopping using it — a revoked
+token cannot be found later in a file nobody remembered. An account-scoped token
+in a plain text file can publish anything on the account.
 
 ## The console script is not the distribution name
 

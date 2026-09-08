@@ -23,12 +23,18 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "glitch-toolkit"
-version = "0.1.0"
+version = "0.1.1"
 description = "Install and verify bounded-autonomy practices in a repository worked on by AI agents"
 readme = "README.md"
 license = "Apache-2.0"
 license-files = ["LICENSE", "NOTICE"]
-requires-python = ">=3.8"
+# 3.9, not 3.8, and the correction is the point rather than an embarrassment.
+# 0.1.0 claimed >=3.8 and could not honour it: the build backend above is
+# setuptools>=77, and no release of setuptools at or above 77 runs on 3.8, so
+# `pip install .` from the sdist fails there. The published wheel would have
+# installed, which is exactly why nobody noticed — the claim was never checked
+# by anything. Now .github/workflows/tests.yml builds on 3.9, so it is.
+requires-python = ">=3.9"
 keywords = ["claude", "agents", "guardrails", "governance", "ci"]
 classifiers = [
     "Environment :: Console",

@@ -1,13 +1,33 @@
 # glitch
 
-Install the practices from *Building Your Store Or Your SaaS With Claude* into
-your own repository, and check that they still refuse things.
+**A check that has stopped refusing things still passes.** That is the failure
+this looks for.
+
+On 8 September 2026, in the repository this package was extracted from, a test
+guarded the one chapter of a paid book that is given away free — asserting the
+sample stops at its cut and does not leak the rest. It was green. It was
+searching a page that had no book on it, for passages it therefore could never
+find, and passing. Nothing was broken; the redaction worked fine. The alarm had
+been disconnected and was still showing a green light.
+
+Every guardrail decays that way eventually, and the decay is silent, because a
+guardrail that has stopped refusing looks exactly like one with nothing to
+refuse.
+
+`glitch` installs six guardrails into your repository and then, whenever you
+ask, runs each one against a case it is *supposed* to refuse. One that no longer
+refuses anything fails here, loudly, instead of passing quietly.
 
 ```bash
+pip install glitch-toolkit
+
 glitch install     # put the artifacts in this repository
 glitch status      # what is installed, what is not
 glitch check --all # verify every step
 ```
+
+No dependencies, no network calls, no telemetry. It writes nothing outside the
+directory you point it at.
 
 ## What it actually checks
 
@@ -122,8 +142,9 @@ anyone can read.
 
 ## Status
 
-Version 0.1.0, the first release. It installs, and the practices it checks are
-the six the book argues for.
+Version 0.1.1. It installs, and the practices it checks are the six the book
+argues for. 0.1.0 was the first release; 0.1.1 changes this description and adds
+continuous integration, and nothing about what the code does.
 
 What it is not yet: it gates nothing. `glitch-mcp` reports and records and
 cannot block an agent from doing anything. That is deliberate and the reasoning

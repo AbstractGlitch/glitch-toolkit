@@ -1,0 +1,174 @@
+name: tests
+
+# The 38 tests, run by something other than a person remembering to run them.
+#
+# This file lives at glitch/.github/ inside the private monorepo, which is not a
+# repository root, so GitHub ignores it there. The public mirror is a subtree of
+# glitch/, so on that side it lands at .github/workflows/tests.yml and runs. One
+# file, and CI on exactly the repository a stranger can open a pull request
+# against.
+#
+# WHY TWO JOBS RATHER THAN ONE MATRIX. The base package promises no dependencies
+# and the MCP SDK requires Python >= 3.10, so `pip install '.[mcp]'` cannot run
+# on the oldest Python this package supports. Splitting them means the
+# dependency-free promise is tested on the floor version, where it matters, and
+# the server is tested where its SDK can actually install. One matrix would have
+# forced a choice between those two.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Nothing here reads or writes the repository beyond checking it out.
+permissions: {}
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  core:
+    # The two suites that must pass with nothing installed but the package
+    # itself. If these ever need a dependency, the promise in the README is
+    # broken and this job is where that surfaces.
+    name: core · py${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.9 is the real floor: the build backend is setuptools >= 77 (chosen
+        # for the PEP 639 licence field) and no such setuptools runs on 3.8.
+        python: ["3.9", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install the package, and nothing else
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+      - name: Prove the base install pulled in no dependencies
+        # The README says "no dependencies" and RELEASING.md calls it a promise
+        # rather than an accident. Asserted here instead of trusted.
+        run: |
+          python - <<'PY'
+          import subprocess, sys
+          out = subprocess.run([sys.executable, "-m", "pip", "freeze"],
+                               capture_output=True, text=True).stdout
+          extra = [l for l in out.splitlines()
+                   if l.strip() and not l.lower().startswith("glitch-toolkit")]
+          if extra:
+              print("::error::the base install brought in: " + ", ".join(extra))
+              raise SystemExit(1)
+          print("base install is dependency-free")
+          PY
+      - name: test_cli.py
+        run: python tests/test_cli.py
+      - name: test_ledger.py
+        run: python tests/test_ledger.py
+
+  full:
+    # Every suite, including the server, with the extra installed. This is the
+    # only job that can prove none of them skipped.
+    name: full · py3.12 with [mcp]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install with the MCP extra
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install '.[mcp]'
+      - name: Run every suite, and refuse a skip
+        # run_all.py exits `1 if failed else 0`, so a SKIPPED suite leaves the
+        # exit code at 0. Without the grep below this job would go green with
+        # ten tests unrun — which is precisely the false green check_gates
+        # exists to catch, in the package that ships it.
+        run: |
+          set -o pipefail
+          python tests/run_all.py | tee suites.txt
+          if grep -q "SKIPPED" suites.txt; then
+            echo "::error::a suite was SKIPPED; run_all.py still exits 0, so this job would otherwise be green with tests unrun"
+            exit 1
+          fi
+          if ! grep -q "test_mcp_server.py *ok" suites.txt; then
+            echo "::error::the server suite did not report ok, so the [mcp] extra is not doing what this job assumes"
+            exit 1
+          fi
+
+  dist:
+    # The three RELEASING.md pre-upload checks that can be automated. They exist
+    # because on release day the built artifacts carried a README saying the
+    # package was "not published anywhere" — metadata is shipped, and a version
+    # on PyPI cannot be replaced.
+    name: dist metadata
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Build both distributions
+        run: |
+          python -m pip install --upgrade pip build twine
+          python -m build
+      - name: twine check
+        run: python -m twine check dist/*
+      - name: The sdist must carry its own test runner
+        # MANIFEST.in exists because setuptools' defaults missed this file, and
+        # an sdist whose documented test command does not work is one a packager
+        # cannot check.
+        run: |
+          python - <<'PY'
+          import glob, tarfile
+          sdist = glob.glob("dist/*.tar.gz")[0]
+          names = tarfile.open(sdist).getnames()
+          missing = [w for w in ("tests/run_all.py", "LICENSE", "NOTICE")
+                     if not any(n.endswith("/" + w) for n in names)]
+          if missing:
+              print("::error::sdist is missing: " + ", ".join(missing))
+              raise SystemExit(1)
+          print("sdist carries the test runner, LICENSE and NOTICE")
+          PY
+      - name: The two version numbers must agree
+        # pyproject.toml carries the released version; src/glitch/__init__.py
+        # carries the one glitch-mcp reports over the protocol. They are set by
+        # hand in two files, which is how they drift, and a stale __version__
+        # misidentifies the running server rather than merely looking untidy.
+        run: |
+          python - <<'PY'
+          import pathlib, re
+          proj = pathlib.Path("pyproject.toml").read_text()
+          init = pathlib.Path("src/glitch/__init__.py").read_text()
+          a = re.search(r'^version\s*=\s*"([^"]+)"', proj, re.M).group(1)
+          b = re.search(r'^__version__\s*=\s*"([^"]+)"', init, re.M).group(1)
+          if a != b:
+              print("::error::pyproject says {} and __init__ says {}".format(a, b))
+              raise SystemExit(1)
+          print("both say " + a)
+          PY
+      - name: The wheel must declare Apache-2.0 and ship no do-not-upload marker
+        run: |
+          python - <<'PY'
+          import glob, zipfile
+          whl = glob.glob("dist/*.whl")[0]
+          z = zipfile.ZipFile(whl)
+          meta = z.read([n for n in z.namelist()
+                         if n.endswith("METADATA")][0]).decode("utf-8")
+          problems = []
+          if "License-Expression: Apache-2.0" not in meta:
+              problems.append("no 'License-Expression: Apache-2.0'")
+          if "Private :: Do Not Upload" in meta:
+              problems.append("the 'Private :: Do Not Upload' classifier is back")
+          if "not published anywhere" in meta:
+              problems.append("the description still says it is unpublished")
+          if problems:
+              print("::error::" + "; ".join(problems))
+              raise SystemExit(1)
+          print("wheel metadata is what the licence decision says it should be")
+          PY
