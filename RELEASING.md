@@ -39,6 +39,34 @@ command, anyone who has both in one environment gets whichever was installed
 last. The audiences do not overlap and this is not worth renaming the command
 for, but it is worth knowing rather than discovering.
 
+## Keeping the public mirror in sync
+
+The package is developed in the private monorepo and published to
+<https://github.com/AbstractGlitch/glitch-toolkit>, which is a MIRROR rather than
+the home of the code. That direction matters: `site/scripts/build-tests.mjs`
+resolves `../glitch/src/glitch/_assets` to prove `site/toolkit/` has not drifted
+from the package, and `site/toolkit/` is a buyer's download path. Moving the tree
+out of the monorepo would break that check, so it stays where it is.
+
+To publish new commits, from the monorepo root:
+
+```bash
+git subtree push --prefix=glitch \
+  https://github.com/AbstractGlitch/glitch-toolkit.git main
+```
+
+The first push was done differently, and it is worth knowing why in case the
+history ever looks odd: `git subtree split --prefix=glitch -b _public_preview`
+produced a branch that was INSPECTED before anything went public — 32 files, 6
+commits, checked for content from `book-studio/`, `site/`, `codex/` and
+`diagnostic-copilot/`, and checked again for Stripe, revenue, campaign or
+infrastructure detail in the commit MESSAGES, which a subtree split carries over
+verbatim. Then `git push <url> _public_preview:main`.
+
+Do that inspection again if the monorepo ever gains a file under `glitch/` that
+was not written to be read by strangers. A mirror is only as private as the least
+careful push into it, and a public commit cannot be recalled.
+
 ## The steps
 
 ```bash
