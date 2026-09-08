@@ -1,7 +1,8 @@
 # Releasing
 
-Nothing here has been released. This file is the checklist for the first one and
-the record of what was decided before it.
+**0.1.0 was released on 2026-09-08** to
+<https://pypi.org/project/glitch-toolkit/0.1.0/>. This file is the checklist it
+went through and the record of what was decided before it.
 
 ## Before anything
 
@@ -15,16 +16,23 @@ commands.
       checked available on PyPI that day. It was `abstractglitch-toolkit`, a
       placeholder chosen for a package nobody intended to upload. `glitch`
       itself is taken by an unrelated 2016 library for glitching JPEGs.
-      Availability was true on the day it was checked and is not a reservation —
-      confirm it again immediately before uploading.
+      Availability was true on the day it was checked and was confirmed again
+      immediately before uploading. It is now taken, by us.
 - [x] **The version.** Moved off `.dev0` to **`0.1.0`** on 2026-09-08, once the
       name was decided. `.dev0` was honest while the name was open, but it is a
       pre-release that `pip install` skips without `--pre`, and shipping the
       first release as something pip ignores by default is a footgun rather
       than a caution.
 
-Neither of those is publication. **Nothing has been uploaded.** The version says
-`0.1.0` because the package is ready to be one, not because it is one.
+Both were settled before the upload, which is the point of listing them as
+decisions rather than steps. 0.1.0 is on PyPI and cannot be replaced; a
+correction is 0.1.1.
+
+**One thing is still outstanding.** The token used for the first upload is
+account-scoped, because a project-scoped one cannot exist before the project
+does. Replace it with a token scoped to `glitch-toolkit` and update `.pypirc`,
+or delete `.pypirc` until the next release. An account-scoped token in a plain
+text file can publish anything on the account.
 
 ## The console script is not the distribution name
 
@@ -70,12 +78,44 @@ careful push into it, and a public commit cannot be recalled.
 ## The steps
 
 ```bash
-cd glitch
 rm -rf build dist src/*.egg-info
 python -m build                      # sdist AND wheel, both are published
 python tests/run_all.py              # 38 tests, three suites
 twine check dist/*
 twine upload dist/*
+```
+
+PowerShell, because that is the shell this actually gets run in. Exactly one
+line differs: `rm` is an alias for `Remove-Item`, which has no `-rf` and errors
+on paths that do not exist.
+
+```powershell
+Remove-Item -Recurse -Force build, dist, src\*.egg-info -ErrorAction SilentlyContinue
+python -m build
+python tests\run_all.py
+twine check dist/*
+twine upload dist/*
+```
+
+`twine check dist/*` and `twine upload dist/*` need no change. PowerShell does
+not expand globs for native commands, so twine receives the literal `dist/*` and
+expands it itself — verified by passing it as a single literal argument. Wrapping
+it in `Get-ChildItem` is unnecessary.
+
+**Run these from a clone of the PUBLIC repo, not from the monorepo**, or at
+least from a monorepo checkout you have confirmed is current. On release day the
+monorepo's `main` still carried a README saying the package was "not published
+anywhere" — that README is the PyPI description, and building from `main` would
+have published that sentence permanently.
+
+If twine's hidden token prompt will not accept a paste (it often will not on
+Windows), put the token in `$HOME\.pypirc` with Notepad rather than setting
+`$env:TWINE_PASSWORD`, which writes it into PSReadLine's on-disk history:
+
+```ini
+[pypi]
+username = __token__
+password = pypi-...
 ```
 
 Then, from a clean machine and a clean virtualenv, prove the thing a user will
@@ -88,6 +128,9 @@ glitch status
 ```
 
 ## What must be true before uploading
+
+All five held for 0.1.0. They are a checklist for the NEXT release, not a record
+of this one.
 
 - [ ] `python tests/run_all.py` reports three suites ok, none SKIPPED. A skipped
       MCP suite means the `[mcp]` extra is not installed locally and the server
@@ -130,7 +173,19 @@ So the number comes from outside the package:
   that fired on their production database is worth more than a thousand
   downloads by a mirror.
 
-The kill criterion in the strategy is "no meaningful install base after six
-weeks". Decide before publishing what number would count, and write it down
-somewhere it can be read back. A threshold chosen after seeing the data is not
-a threshold.
+### The threshold, fixed before there was any data
+
+Decided 2026-09-08, before the upload, precisely so it could not be revised in
+the light of what happened. Phase 1 passes if, **by 20 October 2026**, ANY of:
+
+- one issue or question from someone who is not the owner;
+- ten GitHub stars;
+- one person reporting that a check actually refused something in their own
+  repository.
+
+Download counts are explicitly NOT the gate. Two hundred downloads can be five
+people and several mirrors, and a number you cannot interpret is not a
+threshold. Watch them as a trend; do not let them decide this.
+
+If none of the three has happened by that date, the honest reading is that
+developers do not want this, and no amount of packaging or pricing changes that.
