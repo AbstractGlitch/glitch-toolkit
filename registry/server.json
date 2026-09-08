@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.abstractglitch/glitch-toolkit",
+  "title": "Glitch Toolkit",
+  "description": "Read-only checks that fail a guardrail which is present but has stopped refusing anything",
+  "version": "0.1.2",
+  "websiteUrl": "https://github.com/AbstractGlitch/glitch-toolkit",
+  "repository": {
+    "url": "https://github.com/AbstractGlitch/glitch-toolkit",
+    "source": "github",
+    "id": "1361276154"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "glitch-toolkit",
+      "version": "0.1.2",
+      "transport": { "type": "stdio" },
+      "runtimeHint": "uvx",
+      "runtimeArguments": [
+        {
+          "type": "named",
+          "name": "--from",
+          "value": "glitch-toolkit[mcp]",
+          "description": "The distribution is glitch-toolkit; the server entry point is glitch-mcp, and the MCP SDK is an optional extra so the checker itself keeps its no-dependency promise."
+        },
+        {
+          "type": "positional",
+          "valueHint": "command",
+          "value": "glitch-mcp"
+        }
+      ]
+    }
+  ]
+}

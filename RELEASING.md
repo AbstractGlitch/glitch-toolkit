@@ -1,5 +1,25 @@
 # Releasing
 
+**0.1.2 is prepared and NOT released.** It exists for one reason: listing on the
+official MCP registry requires an `mcp-name: io.github.abstractglitch/glitch-toolkit`
+marker in the package README, the README is the `long_description` baked into
+the distribution at build time, and 0.1.1 went up without it. A PyPI version
+cannot be re-uploaded, so the marker cannot be added to 0.1.1 and a release is
+the only way to carry it. The marker is confirmed present in the built wheel's
+metadata, not only in the source file.
+
+The registry entry itself is `registry/server.json`, validated against the
+published `2025-12-11` schema and proved to refuse six broken variants. A CI
+step in the `dist` job now fails a tree where `server.json`, `pyproject.toml`
+and the README marker disagree, because the entry names a PyPI version and an
+entry pointing at a version that is not on the index is a dangling listing.
+`registry/LISTINGS.md` carries the rest of the surfaces and what each one is
+blocked on.
+
+Before uploading 0.1.2, check what 0.1.1 taught: the description on the PyPI
+project page is what the registry reads, so confirm the marker renders there
+after the upload and before running `mcp-publisher publish`.
+
 **0.1.1 was released on 2026-09-08**, the same day as 0.1.0, to
 <https://pypi.org/project/glitch-toolkit/>. Verified from the index's own JSON
 rather than the local build: `requires_python >=3.9`, `License-Expression:

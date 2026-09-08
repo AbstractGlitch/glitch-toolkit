@@ -1,3 +1,9 @@
+<!-- mcp-name: io.github.abstractglitch/glitch-toolkit -->
+<!-- The line above is how the official MCP registry proves this PyPI
+     package belongs to the namespace it claims. It is read out of the
+     project description, which is this file baked into the distribution
+     at build time, so it cannot be added to a release after the fact. -->
+
 # glitch
 
 **A check that has stopped refusing things still passes.** That is the failure

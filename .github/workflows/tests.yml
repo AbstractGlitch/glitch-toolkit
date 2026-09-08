@@ -228,6 +228,40 @@ jobs:
               raise SystemExit(1)
           print("both say " + a)
           PY
+      - name: The registry entry must match the release it points at
+        # registry/server.json is what the official MCP registry is told, and it
+        # names a PyPI version. Publish it against a version that is not on PyPI
+        # and the listing is a dangling pointer; publish it against the wrong one
+        # and clients install something the entry does not describe. It also
+        # carries the ownership marker's other half: the mcp-name in README.md is
+        # what proves the namespace, and it is baked into the distribution at
+        # build time, so a release without it cannot be listed and cannot be
+        # re-uploaded to fix it.
+        run: |
+          python - <<'PY'
+          import json, pathlib, re
+          proj = pathlib.Path("pyproject.toml").read_text()
+          version = re.search(r'^version\s*=\s*"([^"]+)"', proj, re.M).group(1)
+          entry = json.loads(pathlib.Path("registry/server.json").read_text())
+          readme = pathlib.Path("README.md").read_text()
+          problems = []
+          if entry["version"] != version:
+              problems.append("server.json says {} and pyproject says {}".format(entry["version"], version))
+          for pkg in entry["packages"]:
+              if pkg.get("version") != version:
+                  problems.append("a package entry says {} and pyproject says {}".format(pkg.get("version"), version))
+              if pkg["identifier"] not in ("glitch-toolkit",):
+                  problems.append("the package identifier is " + pkg["identifier"])
+          if ("mcp-name: " + entry["name"]) not in readme:
+              problems.append("README.md carries no 'mcp-name: {}' marker, so the registry cannot verify the namespace".format(entry["name"]))
+          if len(entry["description"]) > 100:
+              problems.append("the description is {} characters and the registry allows 100".format(len(entry["description"])))
+          if problems:
+              for p in problems:
+                  print("::error::" + p)
+              raise SystemExit(1)
+          print("the registry entry, the README marker and the release all say " + version)
+          PY
       - name: The wheel must declare Apache-2.0 and ship no do-not-upload marker
         run: |
           python - <<'PY'
