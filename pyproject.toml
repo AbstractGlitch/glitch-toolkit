@@ -1,16 +1,21 @@
 # Packaging for the toolkit checker.
 #
-# NO LICENCE IS DECLARED HERE, ON PURPOSE. The licence is an open decision
-# (2026-09-08) and these artifacts were, until this commit, part of a paid tier.
-# Declaring one here would quietly answer a question nobody has answered.
+# Apache-2.0, decided 2026-09-08, chosen over MIT for the patent grant: if the
+# attestation registry this package is a step toward ever means anything, it
+# means it with a patent grant behind it.
 #
-# Until it is answered, the `Private :: Do Not Upload` classifier below is what
-# stops an absent-minded `twine upload` from making the decision by accident:
-# PyPI rejects any distribution carrying it. Remove that line deliberately, in
-# the same commit that adds a LICENSE file, or not at all.
+# The `Private :: Do Not Upload` classifier that used to sit in the list below
+# was removed in the same commit that added LICENSE and NOTICE, which is the
+# condition its own comment set for removing it. Nothing else about publication
+# changed with it: this package has still never been uploaded anywhere, and the
+# name below is a placeholder that has not been claimed.
+#
+# setuptools>=77 is not cosmetic. `license = "Apache-2.0"` is the PEP 639 SPDX
+# form, and on setuptools 61 to 76 it is read as the old free-text field and the
+# build fails. Do not lower this bound without changing that line back.
 
 [build-system]
-requires = ["setuptools>=61"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -18,10 +23,11 @@ name = "abstractglitch-toolkit"
 version = "0.1.0.dev0"
 description = "Install and verify bounded-autonomy practices in a repository worked on by AI agents"
 readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.8"
 keywords = ["claude", "agents", "guardrails", "governance", "ci"]
 classifiers = [
-    "Private :: Do Not Upload",
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Programming Language :: Python :: 3",

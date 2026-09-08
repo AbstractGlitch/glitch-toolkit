@@ -95,8 +95,18 @@ The server suite skips cleanly without the `[mcp]` extra and the runner reports
 that as SKIPPED rather than passing, because a green line meaning "we did not
 look" is the exact failure the gate-check practice exists to catch.
 
+## Licence
+
+Apache License 2.0 — see [LICENSE](LICENSE) and [NOTICE](NOTICE). Chosen over MIT
+for the patent grant.
+
+The licence covers **this directory only**. It was extracted from a repository
+that also holds a commercial book, its shop, and unreleased application code,
+none of which are open source; the `LICENSE` at that repository's root is a
+reservation that grants nothing outside `glitch/`.
+
 ## Status
 
-Pre-release, and **no licence is declared yet** — see the note at the top of
-`pyproject.toml`. Until that decision is made the package carries the
-`Private :: Do Not Upload` classifier, which PyPI honours by rejecting it.
+Pre-release. Licensed, but **not published anywhere** — no PyPI release exists
+and the distribution name above is a placeholder that has not been claimed.
+`pip install` from a checkout works today; a package index does not have it.
