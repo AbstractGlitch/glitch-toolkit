@@ -74,8 +74,22 @@ needs the rest of the package, and it says so plainly rather than failing oddly.
 ## The MCP server (read-only)
 
 ```bash
-pip install 'glitch-toolkit[mcp]'
-glitch-mcp --repo .
+uvx --from 'glitch-toolkit[mcp]' glitch-mcp --repo .
+```
+
+**Install the extra in an isolated environment, not a system Python.** The
+checker has no dependencies and that is a promise. The `[mcp]` extra is the
+opposite: `mcp>=2.0` pulls pydantic, starlette, cryptography, opentelemetry and
+a dozen more, and pip will happily UPGRADE what is already there to satisfy
+them. Done against a global interpreter on 8 September 2026 it replaced
+pydantic 1.10 with 2.13 and starlette 0.46 with 1.6, breaking an unrelated
+FastAPI application on the same machine. `uvx` builds a throwaway environment
+and touches nothing else, which is why the registry entry launches it that way.
+
+A virtualenv is equally fine:
+
+```bash
+python -m venv .venv && .venv/bin/pip install 'glitch-toolkit[mcp]'
 ```
 
 It offers the checks to an agent as three tools — `glitch_status`, `glitch_check`,

@@ -9,7 +9,7 @@ and they say so. A corpus that only recorded the failures it had already solved
 would be doing the thing this package is about.
 
 All of these are from **8 September 2026** unless dated otherwise. One day, one
-repository, seventeen entries. That is not unusual; it is what happens the first
+repository, eighteen entries. That is not unusual; it is what happens the first
 time anything looks.
 
 ---
@@ -174,6 +174,33 @@ in prose and `roadmap-studio` has a test that fails if its seeded data is
 double-encoded again. A general check — no BOM, no mojibake, no CRLF where the
 repository says LF — is the strongest candidate for the next artifact here, and
 it does not exist yet.
+
+---
+
+## Caught: a promise that stopped at the package boundary
+
+**The extra ate an unrelated application.** The checker has no runtime
+dependencies, and a CI job asserts it by diffing `pip freeze` either side of the
+install. That guard covers `pip install glitch-toolkit`. It does not cover
+`pip install 'glitch-toolkit[mcp]'`, which is a different thing entirely:
+`mcp>=2.0` pulls pydantic, starlette, cryptography, pywin32, opentelemetry and
+more, and pip upgrades whatever is already installed to satisfy them.
+
+Run against a global interpreter, it replaced pydantic 1.10.22 with 2.13.5 and
+starlette 0.46.2 with 1.6.0, and a FastAPI application on the same machine that
+pins `starlette<0.47` stopped satisfying its own requirements. Nothing about the
+package was broken. The README simply said `pip install 'glitch-toolkit[mcp]'`
+with no word about where, and the reader had one Python.
+
+The registry entry had it right the whole time — it launches through `uvx`,
+which builds a throwaway environment — and the README's own instructions did
+not match it. Two descriptions of how to run one program, and only one of them
+was safe.
+
+*What catches it:* nothing automatic yet. The README now leads with the isolated
+form and says what the extra costs. A check comparing the README's documented
+launch against the one `registry/server.json` publishes is the obvious next
+guard and does not exist.
 
 ---
 
