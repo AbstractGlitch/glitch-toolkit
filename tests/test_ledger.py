@@ -173,7 +173,13 @@ with tempfile.TemporaryDirectory() as tmp:
         repo = root / "repo"
         repo.mkdir()
         led = Ledger.for_repo(repo)
-        assert led.path == repo / ".claude/toolkit/ledger/ledger.jsonl", led.path
+        # repo.resolve(), because for_repo resolves and this must compare like
+        # with like. On Windows tempfile hands back an 8.3 short name when the
+        # user name is over eight characters — C:\Users\RUNNER~1\... — which
+        # resolve() expands. Comparing the unresolved path passed on a machine
+        # whose user name is short and failed on the CI runner, which is a test
+        # that agreed with itself rather than with the code.
+        assert led.path == repo.resolve() / ".claude/toolkit/ledger/ledger.jsonl", led.path
         led.append("check", "pass")
         assert led.path.is_file()
         override = Ledger.for_repo(repo, root / "elsewhere.jsonl")
