@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.abstractglitch/glitch-toolkit",
+  "name": "io.github.AbstractGlitch/glitch-toolkit",
   "title": "Glitch Toolkit",
   "description": "Read-only checks that fail a guardrail which is present but has stopped refusing anything",
   "version": "0.1.2",

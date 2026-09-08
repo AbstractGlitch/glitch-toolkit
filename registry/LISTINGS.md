@@ -61,7 +61,7 @@ says why; the cost of it is this one extra argument.
 **Steps, once 0.1.2 is on PyPI:**
 
 ```
-mcp-publisher login github          # as AbstractGlitch, for io.github.abstractglitch/*
+mcp-publisher login github          # as AbstractGlitch, for io.github.AbstractGlitch/*
 mcp-publisher publish               # from glitch/registry/
 ```
 

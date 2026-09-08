@@ -1,7 +1,7 @@
 # Releasing
 
 **0.1.2 is prepared and NOT released.** It exists for one reason: listing on the
-official MCP registry requires an `mcp-name: io.github.abstractglitch/glitch-toolkit`
+official MCP registry requires an `mcp-name: io.github.AbstractGlitch/glitch-toolkit`
 marker in the package README, the README is the `long_description` baked into
 the distribution at build time, and 0.1.1 went up without it. A PyPI version
 cannot be re-uploaded, so the marker cannot be added to 0.1.1 and a release is

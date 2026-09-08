@@ -252,6 +252,19 @@ jobs:
                   problems.append("a package entry says {} and pyproject says {}".format(pkg.get("version"), version))
               if pkg["identifier"] not in ("glitch-toolkit",):
                   problems.append("the package identifier is " + pkg["identifier"])
+          # The namespace is granted by GitHub and is CASE SENSITIVE: the registry
+          # grants io.github.<login>/* with the login spelled exactly as GitHub
+          # spells it. Publishing io.github.abstractglitch/... against a grant for
+          # io.github.AbstractGlitch/* is a 403, and it cost a release to learn,
+          # because the marker proving ownership is baked into a distribution that
+          # cannot be re-uploaded. The repository URL carries the same login, so the
+          # two must agree here rather than at the registry.
+          owner = entry["repository"]["url"].rstrip("/").split("/")[-2]
+          namespace = entry["name"].split("/")[0]
+          if namespace != "io.github." + owner:
+              problems.append(
+                  "the namespace is {} but the repository owner is {}, so the grant is io.github.{}/*"
+                  .format(namespace, owner, owner))
           if ("mcp-name: " + entry["name"]) not in readme:
               problems.append("README.md carries no 'mcp-name: {}' marker, so the registry cannot verify the namespace".format(entry["name"]))
           if len(entry["description"]) > 100:
