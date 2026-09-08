@@ -1,0 +1,102 @@
+# Releasing
+
+Nothing here has been released. This file is the checklist for the first one and
+the record of what was decided before it.
+
+## Before anything
+
+Publishing is not reversible in the ways that matter. A distribution name on PyPI
+cannot be taken back and given to someone else, and a version number cannot be
+re-used even after a release is deleted. Both of those are decisions, not steps,
+and they belong to the owner rather than to whoever happens to be running the
+commands.
+
+- [ ] **The distribution name.** `pyproject.toml` currently says
+      `abstractglitch-toolkit`, which was a placeholder chosen for a package that
+      was never going to be uploaded. Decide it deliberately. `glitch` itself is
+      taken on PyPI by an unrelated 2016 library for glitching JPEGs.
+- [ ] **The version.** It is `0.1.0.dev0`, and that is honest: `.dev0` is a
+      pre-release, `pip install` skips it without `--pre`, and it says out loud
+      that nothing has shipped. Move it to `0.1.0` in the same commit that
+      publishes, not before.
+
+## The console script is not the distribution name
+
+They are independent, and only one of them is a promise to strangers. The command
+is `glitch`, and it should stay `glitch` whatever the package ends up being
+called: it is what the book says, what every SKILL.md says, and what the
+`GLITCH-RECEIPT` lines say.
+
+The one thing worth knowing about the collision: the unrelated `glitch` package
+on PyPI is an sdist-only release from 2016. If it also installs a `glitch`
+command, anyone who has both in one environment gets whichever was installed
+last. The audiences do not overlap and this is not worth renaming the command
+for, but it is worth knowing rather than discovering.
+
+## The steps
+
+```bash
+cd glitch
+rm -rf build dist src/*.egg-info
+python -m build                      # sdist AND wheel, both are published
+python tests/run_all.py              # 38 tests, three suites
+twine check dist/*
+twine upload dist/*
+```
+
+Then, from a clean machine and a clean virtualenv, prove the thing a user will
+actually do rather than the thing you just built:
+
+```bash
+pip install <name>
+glitch install
+glitch status
+```
+
+## What must be true before uploading
+
+- [ ] `python tests/run_all.py` reports three suites ok, none SKIPPED. A skipped
+      MCP suite means the `[mcp]` extra is not installed locally and the server
+      went untested; that is not a release-blocker but it must be a decision.
+- [ ] The sdist carries `tests/run_all.py`. `MANIFEST.in` exists because
+      setuptools' defaults missed it, and an sdist whose documented test command
+      does not work is one a packager cannot check.
+- [ ] The wheel metadata says `License-Expression: Apache-2.0` and carries both
+      `LICENSE` and `NOTICE`.
+- [ ] No `Private :: Do Not Upload` classifier survives anywhere. Its removal
+      was the deliberate act described in `pyproject.toml`; if it has come back,
+      something has been reverted and the licence decision needs re-checking
+      before anything is uploaded.
+- [ ] `site/toolkit/` still matches `src/glitch/_assets/` and `src/glitch/cli.py`
+      byte for byte. `site/scripts/build-tests.mjs` is the check. Those files are
+      a buyer's download and they must not drift because a release touched them.
+
+## Measuring adoption WITHOUT putting telemetry in the package
+
+The build sequence asks for an install count. It must not be obtained by making
+the package phone home, and this is not a preference.
+
+`cli.py` says, in its own module docstring, "Nothing leaves your machine. There
+are no network calls in this file." `token_audit.py` redacts the paths it prints
+precisely because its output gets pasted into threads. The whole product is an
+argument that an agent should not take actions its operator did not authorise.
+A package that quietly reported installs would be doing exactly that, to the
+people most likely to notice, in the one tool they installed to stop it
+happening. It would be the fastest way to lose the only audience this has.
+
+So the number comes from outside the package:
+
+- **PyPI download counts.** PyPI publishes them; `pypistats.org` and the public
+  BigQuery dataset both expose them, and neither needs a line of code here.
+  Mirrors and CI inflate the number, so read the trend rather than the total.
+- **The repository.** Stars, forks and clone counts, from the host's own
+  insights.
+- **What people say.** Issues, questions and pull requests are a worse metric
+  and a better signal than any of the above: one person describing a refusal
+  that fired on their production database is worth more than a thousand
+  downloads by a mirror.
+
+The kill criterion in the strategy is "no meaningful install base after six
+weeks". Decide before publishing what number would count, and write it down
+somewhere it can be read back. A threshold chosen after seeing the data is not
+a threshold.

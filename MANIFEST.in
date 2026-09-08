@@ -1,0 +1,17 @@
+# What the sdist carries beyond what setuptools works out for itself.
+#
+# The default heuristics found tests/test_*.py and missed tests/run_all.py,
+# which is the one command the README tells a reader to run. An sdist whose
+# tests cannot be run with the documented command is an sdist that cannot be
+# checked by the person most likely to want to check it: a packager building
+# from source rather than installing a wheel.
+graft tests
+include LICENSE
+include NOTICE
+include README.md
+
+# Never ship build output or caches, whatever is lying around locally.
+global-exclude __pycache__
+global-exclude *.py[cod]
+prune build
+prune dist
