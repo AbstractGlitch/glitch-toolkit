@@ -11,7 +11,7 @@ go, so token decisions are measured instead of guessed.
     python token_audit.py --transcripts D:/backups/jsonl  # read them from elsewhere
     python token_audit.py --record FLOOR.md   # check the record, measure nothing
     python token_audit.py --table-only        # the table alone, safe to show someone
-    python token_audit.py --full-path         # unredacted directory, for a wrong scan
+    python token_audit.py --full-path         # unredacted paths, for a wrong scan
 
 Almost nobody has measured their own floor. They have an impression of it, formed
 by watching a bar move, and the impression is usually wrong by a factor. The floor
@@ -68,19 +68,74 @@ import sys
 CHARS_PER_TOKEN = 3.8  # rough mixed prose+code estimate, used only for tool-result sizing
 
 
+def _usage_totals(usage):
+    """Billed input, cache read, cache write and output for one assistant turn.
+
+    Two traps, and both of them were live in this file until 2026-09-06.
+
+    Recent transcripts put the billed figures in usage.iterations and leave the
+    top level fields at zero. Reading only the top level is not a rounding
+    error: across forty sessions on the machine this was fixed on, 44,574 of
+    44,634 assistant records carried an iterations array, and the reported
+    startup floor differed from the correct one on twenty four of the forty.
+    Summing across iterations closed the gap on all twenty four.
+
+    Cache writes are split by lifetime into usage.cache_creation when that
+    object is present, and the flat cache_creation_input_tokens is the older
+    shape. On the same population the flat field was present and equal to the
+    sum of the two every time, so this changes no number there, but a transcript
+    carrying only the object would otherwise be read as zero cache writes.
+
+    Both rules are taken from the command in site/components/SessionMeter.tsx,
+    which is the canonical version. scripts/agreement-tests.mjs in the
+    floor-audit package holds the two to the same answer over one fixture.
+    """
+    parts = usage.get("iterations")
+    if not isinstance(parts, list) or not parts:
+        parts = [usage]
+    inp = read = write = out = 0
+    for part in parts:
+        inp += part.get("input_tokens", 0) or 0
+        read += part.get("cache_read_input_tokens", 0) or 0
+        out += part.get("output_tokens", 0) or 0
+        created = part.get("cache_creation")
+        if isinstance(created, dict):
+            write += created.get("ephemeral_5m_input_tokens", 0) or 0
+            write += created.get("ephemeral_1h_input_tokens", 0) or 0
+        else:
+            write += part.get("cache_creation_input_tokens", 0) or 0
+    return inp, read, write, out
+
+
+def slug_for(project_path):
+    """The transcript folder name Claude Code makes from a working directory."""
+    return re.sub(r"[^A-Za-z0-9]", "-", project_path)
+
+
 def project_dir(project_path):
     """Map a working directory to its ~/.claude/projects transcript folder."""
-    # Spaces flatten to hyphens too. Leaving that out is the defect Appendix A
-    # walks through: every project whose folder name contains a space was told
-    # its transcripts did not exist, and the fallback below missed for the same
-    # reason, because it compared a spaced tail against a hyphenated folder.
-    slug = (project_path.replace(":", "-").replace("\\", "-")
-            .replace("/", "-").replace(" ", "-"))
+    # Every character that is not a letter or a digit becomes a hyphen. Not the
+    # four that used to be listed here.
+    #
+    # Appendix A walks through the version of this bug that named spaces: a
+    # project whose folder had a space in it was told its transcripts did not
+    # exist. Adding a space to the list fixed the case in front of us and left
+    # the rule wrong, which is the smaller half of that lesson and the half that
+    # got taken. The evidence is in the folder names themselves: a worktree
+    # under .claude is filed as ...--claude-worktrees-..., so the dot flattens
+    # too, and so does every other punctuation mark. A project path containing a
+    # dot or an underscore still failed here, and the tail fallback below failed
+    # with it for the same reason, comparing an unflattened tail against a
+    # flattened folder.
+    #
+    # This is the rule slugFor in the floor-audit package applies, and
+    # scripts/agreement-tests.mjs holds the two to the same answer.
+    slug = slug_for(project_path)
     base = os.path.expanduser("~/.claude/projects")
     exact = os.path.join(base, slug)
     if os.path.isdir(exact):
         return exact
-    tail = os.path.basename(project_path.rstrip("/\\")).lower().replace(" ", "-")
+    tail = slug_for(os.path.basename(project_path.rstrip("/\\"))).lower()
     for cand in sorted(glob.glob(os.path.join(base, "*"))):
         if os.path.isdir(cand) and cand.lower().endswith(tail):
             return cand
@@ -111,20 +166,33 @@ def scan(path):
             typ = d.get("type")
             msg = d.get("message") or {}
 
-            if typ == "assistant" and not d.get("isSidechain"):
+            if typ == "assistant":
                 usage = msg.get("usage") or {}
-                ctx = (usage.get("input_tokens", 0)
-                       + usage.get("cache_read_input_tokens", 0)
-                       + usage.get("cache_creation_input_tokens", 0))
-                if ctx:
-                    s["turns"] += 1
-                    s["cache_read"] += usage.get("cache_read_input_tokens", 0)
-                    s["cache_new"] += usage.get("cache_creation_input_tokens", 0)
-                    s["output"] += usage.get("output_tokens", 0)
-                    s["peak"] = max(s["peak"], ctx)
-                    if s["floor"] is None:
-                        s["floor"] = ctx
-                        s["started"] = (d.get("timestamp") or "")[:19]
+                # A turn whose model is missing or synthetic carries no tokens,
+                # so counting it would inflate the turn count without moving any
+                # figure it divides into. Synthetic models are written with angle
+                # brackets. There were forty two of these across the forty
+                # sessions this was checked on and every one of them was zero.
+                model = str(msg.get("model") or "")
+                if usage and model and not model.startswith("<"):
+                    inp, read, write, out = _usage_totals(usage)
+                    ctx = inp + read + write
+                    if ctx:
+                        s["turns"] += 1
+                        s["cache_read"] += read
+                        s["cache_new"] += write
+                        s["output"] += out
+                        s["peak"] = max(s["peak"], ctx)
+                        # A subagent turn is a billed turn and belongs in the
+                        # counts above, but it can never be the floor: its
+                        # context is the subagent's, not the session's, and a
+                        # session whose first billed record is a sidechain would
+                        # otherwise report the wrong conversation's startup cost.
+                        # The floor waits for the first billed turn on the main
+                        # thread instead.
+                        if s["floor"] is None and not d.get("isSidechain"):
+                            s["floor"] = ctx
+                            s["started"] = (d.get("timestamp") or "")[:19]
 
             content = msg.get("content")
             if not isinstance(content, list):
@@ -159,22 +227,48 @@ def fmt(n):
     return "{:,}".format(int(n))
 
 
-def report_one(tag, s):
+def floor_of(s):
+    """The session's floor, or None when it never had a main thread turn.
+
+    A session whose every billed record is a subagent has turns and a peak and
+    no startup floor of its own. Printing a zero there would be a measurement
+    the file does not contain, so it prints a dash and stays out of the floor
+    statistics while its turns and reads still count in the totals.
+    """
+    return s["floor"] if s["floor"] else None
+
+
+def report_one(tag, s, full_path=False):
     if not s["turns"]:
         return
     trips = len(s["per_response"])
     calls = sum(s["calls"].values())
     batched = sum(1 for v in s["per_response"].values() if v > 1)
-    share = (s["floor"] * s["turns"]) / s["cache_read"] * 100 if s["cache_read"] else 0
+    floor = floor_of(s)
+    share = (floor * s["turns"]) / s["cache_read"] * 100 if floor and s["cache_read"] else 0
 
     print("\n" + "=" * 78)
     print("session %s   started %s" % (tag, s["started"]))
     print("=" * 78)
     print("  turns %s | floor %s | peak ctx %s"
-          % (fmt(s["turns"]), fmt(s["floor"]), fmt(s["peak"])))
+          % (fmt(s["turns"]), fmt(floor) if floor else "-", fmt(s["peak"])))
     print("  cache_read %s | cache_new %s | output %s"
           % (fmt(s["cache_read"]), fmt(s["cache_new"]), fmt(s["output"])))
-    print("  floor share of all reads: %.0f%%   <- shrinking the floor saves this fraction" % share)
+    # Over 100 is a real reading, not an error, and it surfaced the day the
+    # figures above started being summed across usage.iterations. floor x turns
+    # is what the session would have re-read if every turn carried the whole
+    # startup context; cache_read is what it did read. The second can be the
+    # smaller of the two, because a compaction cuts the context below what the
+    # session started with and every turn after it reads less than the floor.
+    # Calling that a share of all reads was the number telling a plain untruth
+    # in the one place this tool claims to be exact.
+    if share > 100:
+        print("  floor by turns is %.0f%% of what was actually read, so some turns"
+              % share)
+        print("  read less than the session started with. That is a compaction:")
+        print("  the context was cut below the floor and stayed there.")
+    else:
+        print("  floor share of all reads: %.0f%%   <- shrinking the floor saves this fraction" % share)
     if trips:
         print("  round trips %s for %s tool calls (%.2f per trip); batched %.0f%%"
               % (fmt(trips), fmt(calls), calls / trips, batched / trips * 100))
@@ -189,7 +283,7 @@ def report_one(tag, s):
                   % (name[:26], fmt(n), fmt(ch), fmt(ch / CHARS_PER_TOKEN), fmt(ch / n)))
 
     if s["big_results"]:
-        print("\n  oversized single results (>50k chars) — these tax every later turn:")
+        print("\n  oversized single results (>50k chars), which tax every later turn:")
         for size, name in sorted(s["big_results"], reverse=True)[:5]:
             print("    %9s chars (~%s tok)  %s" % (fmt(size), fmt(size / CHARS_PER_TOKEN), name[:40]))
 
@@ -199,7 +293,8 @@ def report_one(tag, s):
         print("\n  re-read files: %s redundant Read calls across %s files"
               % (fmt(wasted), fmt(len(dupes))))
         for p, n in dupes[:5]:
-            print("    %3dx  %s" % (n, p[-64:]))
+            shown = p if full_path else redact_text(p)
+            print("    %3dx  %s" % (n, shown[-64:]))
 
 
 def _native(path):
@@ -266,7 +361,7 @@ def _hook_payloads(settings_path):
     return out
 
 
-def report_floor(project, latest_floor):
+def report_floor(project, latest_floor, full_path=False):
     """Itemise the controllable parts of the startup floor."""
     home = os.path.expanduser("~/.claude")
     slug_dir = project_dir(project)
@@ -349,7 +444,12 @@ def report_floor(project, latest_floor):
         print("\nHooks firing in this project:")
         for event, cmd, payload, src in hooks:
             note = ("  <- injects %s bytes" % fmt(payload)) if payload else ""
-            print("   %-18s %s%s" % (event, cmd[:52], note))
+            # A hook command is a command line, so it is mostly a path, and this
+            # is the block a reader screenshots when they are asking someone why
+            # their floor is what it is. Redacted before it is truncated, since
+            # truncating first would cut a name in half and leave the half.
+            shown = cmd if full_path else redact_text(cmd)
+            print("   %-18s %s%s" % (event, shown[:52], note))
 
 
 RECORD = re.compile(r"floor[^0-9\n]{0,40}([0-9][0-9,_ ]*)", re.I)
@@ -411,6 +511,55 @@ def check_record(path):
     return 0
 
 
+SESSION_ID = re.compile(
+    r"\b[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\b", re.I)
+USER_IN_PATH = re.compile(r"((?:[A-Za-z]:)?[\\/](?:Users|home)[\\/])([^\\/\s\"')><]+)")
+# The folder name Claude Code makes from a working directory:
+# C--Users-someone-Desktop-Project. It is the whole absolute path with the
+# separators flattened, so it carries a user name and a project name and none of
+# the shape that makes a path obvious to someone skimming for one. It survived
+# the first version of redact_text, which looked only for paths.
+PROJECT_SLUG = re.compile(r"\b[A-Za-z]-{2}[A-Za-z0-9][\w-]*")
+
+
+def redact_text(s):
+    """Take the same passes over a line that may have paths inside it.
+
+    redact_path below shortens a string that is one directory. This is for the
+    lines that are mostly something else and carry a path in the middle: a
+    re-read file, a hook command. Both were printed whole until 2026-09-06,
+    which put a user name into two of the places this tool's output is most
+    likely to be pasted somewhere, since a re-read list is the finding people
+    quote and a hook line is the one they ask for help with.
+
+    Home first, then the user name wherever it survives, so a path outside the
+    home directory keeps its shape and loses the part that names a person. It
+    mirrors redactText in the floor-audit package, and it fails the same way:
+    toward redaction, because an over shortened path is an inconvenience and a
+    leaked one cannot be taken back.
+    """
+    home = os.path.expanduser("~")
+    out = str(s)
+    if home:
+        out = _path_pattern(home).sub("~", out)
+    out = SESSION_ID.sub("<session>", out)
+    out = PROJECT_SLUG.sub("<project>", out)
+    out = USER_IN_PATH.sub(lambda m: m.group(1) + "<user>", out)
+    return out
+
+
+def _path_pattern(p):
+    """A path matched with either separator and without regard to case.
+
+    The same directory reaches this function written three ways on Windows, and
+    a guard that recognises only one of them reports clean on the other two.
+    Built from the segments rather than by escaping the whole string, because
+    the separator is the one character that has to stay flexible.
+    """
+    parts = [re.escape(x) for x in re.split(r"[\\/]+", str(p)) if x]
+    return re.compile(r"[\\/]+".join(parts), re.I)
+
+
 def redact_path(p):
     """Make a transcript directory printable in front of other people.
 
@@ -446,7 +595,7 @@ def main():
     ap.add_argument("--table-only", action="store_true", dest="table_only",
                     help="print the session table and stop, with no totals underneath it")
     ap.add_argument("--full-path", action="store_true", dest="full_path",
-                    help="print the transcript directory unredacted, for debugging a wrong scan")
+                    help="print paths unredacted: the scanned directory, re-read files, hook commands")
     args = ap.parse_args()
 
     if args.record:
@@ -468,7 +617,7 @@ def main():
         if not s["turns"]:
             print("session %s has no turns to measure." % args.session)
             return 1
-        report_one(args.session, s)
+        report_one(args.session, s, args.full_path)
         return 0
 
     files = files[:args.limit]
@@ -485,7 +634,8 @@ def main():
         batched = sum(1 for v in s["per_response"].values() if v > 1)
         rows.append((tag, s))
         print("%-10s %7s %9s %9s %14s %7s %7s" % (
-            tag, fmt(s["turns"]), fmt(s["floor"]), fmt(s["peak"]), fmt(s["cache_read"]),
+            tag, fmt(s["turns"]), fmt(floor_of(s)) if floor_of(s) else "-",
+            fmt(s["peak"]), fmt(s["cache_read"]),
             fmt(trips), ("%.0f%%" % (batched / trips * 100)) if trips else "-"))
 
     if not rows:
@@ -511,22 +661,25 @@ def main():
     if rows:
         tot_read = sum(s["cache_read"] for _, s in rows)
         tot_turns = sum(s["turns"] for _, s in rows)
-        floors = [s["floor"] for _, s in rows]
-        floor_cost = sum(s["floor"] * s["turns"] for _, s in rows)
+        floors = [floor_of(s) for _, s in rows if floor_of(s)]
+        floor_cost = sum(floor_of(s) * s["turns"] for _, s in rows if floor_of(s))
         print("\ntotals across %d sessions: %s cache-read tokens, %s turns"
               % (len(rows), fmt(tot_read), fmt(tot_turns)))
-        print("floor range %s to %s tokens; floor accounts for %s tokens = %.0f%% of all reads"
-              % (fmt(min(floors)), fmt(max(floors)), fmt(floor_cost),
-                 floor_cost / tot_read * 100 if tot_read else 0))
+        if floors:
+            pct = floor_cost / tot_read * 100 if tot_read else 0
+            print("floor range %s to %s tokens; floor by turns is %s tokens, %.0f%% of all reads"
+                  % (fmt(min(floors)), fmt(max(floors)), fmt(floor_cost), pct))
+            if pct > 100:
+                print("over 100% because a compacted session reads less than it started with")
         print("cutting 10k from the floor would have saved ~%s tokens across these sessions"
               % fmt(10000 * tot_turns))
 
     if args.floor:
         # rows are in most-recent-first order, so rows[0] is the newest real session
-        report_floor(args.project, rows[0][1]["floor"] if rows else None)
+        report_floor(args.project, rows[0][1]["floor"] if rows else None, args.full_path)
 
     for tag, s in sorted(rows, key=lambda r: -r[1]["cache_read"])[:args.top]:
-        report_one(tag, s)
+        report_one(tag, s, args.full_path)
 
     return 0
 
