@@ -45,11 +45,55 @@ and `check` work with nothing on the path and no install step — that property 
 deliberate and there is a test for the search paths it uses. Only `install`
 needs the rest of the package, and it says so plainly rather than failing oddly.
 
+## The MCP server (read-only)
+
+```bash
+pip install 'abstractglitch-toolkit[mcp]'
+glitch-mcp --repo .
+```
+
+It offers the checks to an agent as three tools — `glitch_status`, `glitch_check`,
+`glitch_ledger_tail` — and appends every question and answer to
+`.claude/toolkit/ledger/ledger.jsonl`.
+
+**It gates nothing.** It cannot pause, block, refuse or intercept any action. It
+has no database connection, no credential and no network call. That is the whole
+first version, on purpose: a server that stands between an agent and a
+production database is serious software, and the honest order is to run
+read-only first, read the ledger, and find out what it *would* have refused
+before giving it the power to refuse. A gate built before that record exists is
+a guess with permissions.
+
+The checks write nothing into your repository. The server breaks that in exactly
+one place — it appends to the ledger — and `--no-ledger` turns off even that, at
+the cost of the only thing worth keeping.
+
+In Claude Code, `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "glitch": { "command": "glitch-mcp", "args": ["--repo", "."] }
+  }
+}
+```
+
+### The ledger
+
+Append-only JSONL. Nothing rewrites a line it did not just write; a record that
+is overtaken is superseded by a new one and both stay; a field nobody measured
+is `null` rather than `0`; a half-written last line is skipped and counted, never
+repaired, because repairing it means rewriting the file.
+
 ## Tests
 
 ```bash
-python tests/test_cli.py     # 18 tests, no dependencies
+python tests/run_all.py      # all three suites, 38 tests
 ```
+
+The server suite skips cleanly without the `[mcp]` extra and the runner reports
+that as SKIPPED rather than passing, because a green line meaning "we did not
+look" is the exact failure the gate-check practice exists to catch.
 
 ## Status
 

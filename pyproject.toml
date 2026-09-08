@@ -33,8 +33,15 @@ classifiers = [
 # they have installed anything. Adding one is a product decision.
 dependencies = []
 
+# The MCP server is the one thing here that needs anything, and it is optional
+# for that reason. `glitch` keeps its promise; `glitch-mcp` asks first and says
+# so plainly when the SDK is absent rather than dying on an ImportError.
+[project.optional-dependencies]
+mcp = ["mcp>=2.0"]
+
 [project.scripts]
 glitch = "glitch.cli:main"
+glitch-mcp = "glitch.mcp_server:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}
