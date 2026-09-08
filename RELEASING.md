@@ -6,8 +6,8 @@ went through and the record of what was decided before it.
 
 ## 0.1.1 — why there is a second release so soon
 
-Nothing about the code changed. Two things about the package did, and neither
-could reach a reader without a release.
+Nothing about the code changed. Three things about the package did, and none
+of them could reach a reader without a release.
 
 **The description.** The README is the PyPI project description and it is baked
 into the uploaded distribution, so editing it on GitHub changes nothing on
@@ -21,24 +21,36 @@ package detects. Since 0.1.0 cannot be re-uploaded, that fix is a version.
 and no setuptools at or above 77 runs on 3.8. The wheel would install there; the
 sdist could not build. Corrected to `>=3.9`.
 
-That second one is the argument for the change below, so it is worth naming
-plainly: the claim was wrong from the first commit and stayed wrong through a
-release, because nothing ran that could contradict it.
+**Line endings.** 0.1.0 shipped CRLF in **all 21 text files of the wheel and all
+26 of the sdist**, verified by downloading the published artifacts rather than
+inferred: it was built on a Windows clone with `core.autocrlf=true`. Nothing
+breaks — Python reads either — but one commit produced different bytes depending
+on the machine, `glitch install` wrote CRLF into repositories that may lint
+against it, and the `GLITCH-RECEIPT` digest hashes file bytes, so the receipt
+moved with the builder instead of with the installation. `.gitattributes` now
+pins the working tree to LF on every platform, and the `dist` job fails on any
+CRLF in a built distribution.
 
-## CI, and the four checks it takes off this list
+All three of these were wrong from the first commit and stayed wrong through a
+release, because nothing ran that could contradict them. That is the argument
+for the change below.
+
+## CI, and the five checks it takes off this list
 
 `.github/workflows/tests.yml` runs on the public mirror. It lives at
 `glitch/.github/` in the monorepo, which is not a repository root, so GitHub
 ignores it there and runs it after the subtree push — one file, CI on the
 repository a stranger can actually open a pull request against.
 
-It automates four things that were previously "remember to do it":
+It automates five things that were previously "remember to do it":
 
 - the three suites, on 3.9, 3.12 and 3.13;
 - **the sdist carries `tests/run_all.py`, `LICENSE` and `NOTICE`**;
 - **the wheel says `License-Expression: Apache-2.0`, carries no
   `Private :: Do Not Upload` classifier, and no longer describes itself as
   unpublished** — the exact three failures that nearly shipped on release day;
+- **neither distribution contains CRLF**, so a Windows build and a Linux build of
+  one commit are byte-identical;
 - **the base install pulls in no dependencies**, which the README states as a
   promise and which was until now only ever true by inspection.
 

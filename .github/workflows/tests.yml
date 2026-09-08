@@ -135,6 +135,32 @@ jobs:
               raise SystemExit(1)
           print("sdist carries the test runner, LICENSE and NOTICE")
           PY
+      - name: No CRLF in either distribution
+        # 0.1.0 shipped CRLF in all 21 wheel files and all 26 sdist files,
+        # built on a Windows clone with core.autocrlf=true. .gitattributes now
+        # pins the working tree to LF everywhere; this asserts it rather than
+        # trusting it, because the failure is invisible until someone diffs two
+        # builds of the same commit.
+        run: |
+          python - <<'PY'
+          import glob, io, tarfile, zipfile
+          bad = []
+          whl = glob.glob("dist/*.whl")[0]
+          z = zipfile.ZipFile(whl)
+          for n in z.namelist():
+              if n.endswith((".py", ".md", ".json", ".txt")) and b"\r\n" in z.read(n):
+                  bad.append(whl + ":" + n)
+          sd = glob.glob("dist/*.tar.gz")[0]
+          tf = tarfile.open(sd)
+          for m in tf.getmembers():
+              if m.isfile() and m.name.endswith((".py", ".md", ".json", ".txt")):
+                  if b"\r\n" in tf.extractfile(m).read():
+                      bad.append(sd + ":" + m.name)
+          if bad:
+              print("::error::CRLF in {} shipped file(s), e.g. {}".format(len(bad), bad[0]))
+              raise SystemExit(1)
+          print("both distributions are LF throughout")
+          PY
       - name: The two version numbers must agree
         # pyproject.toml carries the released version; src/glitch/__init__.py
         # carries the one glitch-mcp reports over the protocol. They are set by

@@ -1,0 +1,16 @@
+# Line endings are decided here, not by whoever happens to be building.
+#
+# 0.1.0 shipped with CRLF in every one of its 21 wheel files and 26 sdist
+# files, because it was built on a Windows clone with core.autocrlf=true. That
+# breaks nothing — Python reads either — but it means one commit produces two
+# different artifacts depending on the machine, `glitch install` writes CRLF
+# files into repositories that may lint for them, and the GLITCH-RECEIPT digest
+# changes with the builder rather than with the installation. A package that
+# asks people to paste a digest should not have the digest depend on who built
+# the wheel.
+#
+# This normalises the working tree to LF on every platform, so a Windows
+# checkout, a Linux checkout and the CI runner all build byte-identical
+# distributions. Nothing in the repository changes: the stored content was
+# always LF, and only the checkout was being rewritten.
+* text=auto eol=lf
