@@ -1,0 +1,12 @@
+{
+  "autoCompactWindow": 250000,
+  "skillOverrides": {
+    "REPLACE-with-a-skill-you-never-use-here": "name-only"
+  },
+  "permissions": {
+    "allow": [],
+    "deny": [],
+    "ask": []
+  },
+  "hooks": {}
+}

@@ -1,0 +1,50 @@
+# Packaging for the toolkit checker.
+#
+# NO LICENCE IS DECLARED HERE, ON PURPOSE. The licence is an open decision
+# (2026-09-08) and these artifacts were, until this commit, part of a paid tier.
+# Declaring one here would quietly answer a question nobody has answered.
+#
+# Until it is answered, the `Private :: Do Not Upload` classifier below is what
+# stops an absent-minded `twine upload` from making the decision by accident:
+# PyPI rejects any distribution carrying it. Remove that line deliberately, in
+# the same commit that adds a LICENSE file, or not at all.
+
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "abstractglitch-toolkit"
+version = "0.1.0.dev0"
+description = "Install and verify bounded-autonomy practices in a repository worked on by AI agents"
+readme = "README.md"
+requires-python = ">=3.8"
+keywords = ["claude", "agents", "guardrails", "governance", "ci"]
+classifiers = [
+    "Private :: Do Not Upload",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+# No runtime dependencies, and this is a promise rather than a coincidence.
+# The checker has to run in a stranger's repository on the first day, before
+# they have installed anything. Adding one is a product decision.
+dependencies = []
+
+[project.scripts]
+glitch = "glitch.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+glitch = [
+    "_assets/scripts/*.py",
+    "_assets/skills/*/SKILL.md",
+    "_assets/templates/*",
+]
