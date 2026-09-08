@@ -471,6 +471,17 @@ def check_floor(root):
                 "timestamp": "2026-01-14T09:00:0{}".format(i),
                 "message": {
                     "id": "msg_{}".format(i),
+                    # Named, because a real assistant record always is, and this
+                    # fixture stood in for one without it. token_audit.py skips a
+                    # turn whose model is missing or synthetic, which is the rule
+                    # the command on the site has used since it was written: a
+                    # synthetic turn carries no tokens and counting it inflates
+                    # the turn count. Across 44,634 real assistant records on the
+                    # machine that rule was checked against, none was missing a
+                    # model and all 42 synthetic ones were zero. So the rule
+                    # costs a reader nothing and this fixture was the only thing
+                    # in the repository shaped like a transcript that is not one.
+                    "model": "claude-opus-4-8",
                     "usage": {
                         "input_tokens": 12,
                         "cache_read_input_tokens": 20000 + i * 5000,
