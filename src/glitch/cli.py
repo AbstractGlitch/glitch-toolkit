@@ -892,6 +892,17 @@ def cmd_install(args):
     print("")
     print("  Next: glitch status")
     print("")
+    print("  The same checks are also available to an agent over MCP, read-only,")
+    print("  with every answer appended to a local ledger. It gates nothing and")
+    print("  makes no network call. This prints the command rather than running")
+    print("  it, because writing to your client's configuration is not something")
+    print("  an installer should do on your behalf:")
+    print("")
+    print("    claude mcp add glitch -- uvx --from 'glitch-toolkit[mcp]' glitch-mcp")
+    print("")
+    print("  uvx rather than pip: the extra pulls a real dependency tree and pip")
+    print("  will upgrade what is already installed to satisfy it.")
+    print("")
     return 0
 
 

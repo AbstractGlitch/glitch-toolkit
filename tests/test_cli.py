@@ -570,6 +570,39 @@ check("an artifact that lost ONE refusal and kept the rest is still caught",
       one_refusal_removed)
 
 
+def install_names_the_server_without_configuring_it():
+    """install tells you the server exists, and does not wire it up for you.
+
+    Both halves matter. A reader who installs the artifacts has no other way to
+    discover the server; and an installer that edited a client's configuration
+    unasked would be doing the thing this package argues against, in the tool
+    that argues it.
+    """
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = pathlib.Path(tmp)
+        code, out = glitch(repo, "install")
+        assert code == 0, out
+        assert "claude mcp add glitch" in out, (
+            "install never mentions the MCP server, so nothing points a reader "
+            "at it:\n" + out
+        )
+        assert "uvx" in out, (
+            "install suggests the server without saying to run it isolated. The "
+            "extra pulls a dependency tree and pip upgrades to satisfy it.\n" + out
+        )
+        for unwanted in (".mcp.json", "mcp.json"):
+            found = list(repo.rglob(unwanted))
+            assert not found, (
+                "install wrote {} on its own. Printing the command is the point; "
+                "editing a client's configuration unasked is not."
+                .format([f.name for f in found])
+            )
+
+
+check("install names the MCP server and does not configure it for you",
+      install_names_the_server_without_configuring_it)
+
+
 print("")
 print("{} passed, {} failed".format(passed, failed))
 

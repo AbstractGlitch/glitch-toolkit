@@ -128,7 +128,7 @@ repaired, because repairing it means rewriting the file.
 ## Tests
 
 ```bash
-python tests/run_all.py      # all three suites, 39 tests
+python tests/run_all.py      # all three suites, 40 tests
 ```
 
 The server suite skips cleanly without the `[mcp]` extra and the runner reports
