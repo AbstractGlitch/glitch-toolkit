@@ -196,11 +196,19 @@ code is what `CORPUS.md` is about, so it was executed.
 That makes the Dockerfile, if one is ever needed, four lines and not a project:
 
 ```dockerfile
-FROM python:3.13-slim
+FROM python:3.12-slim
 RUN pip install --no-cache-dir 'glitch-toolkit[mcp]'
 WORKDIR /repo
 ENTRYPOINT ["glitch-mcp", "--repo", "."]
 ```
+
+**3.12 and not 3.13, deliberately.** The `full` CI job is the only one that
+installs the `[mcp]` extra and exercises the server, and it runs on 3.12; the
+empty-directory handshake above was run on 3.11. The core matrix covers 3.13 but
+covers the *package*, not the server. So 3.13 would be an unverified claim in a
+build spec, which is the same shape as claiming an operating system nothing had
+tested. It almost certainly works; nothing has checked, so the file does not say
+it does.
 
 **Checked 2026-09-09: it is not on Glama.** There is no auto-indexed profile, so
 the badge is not a copy-paste and the full flow is required — submit, claim,
