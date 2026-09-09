@@ -224,6 +224,40 @@ Checking the stated process is not checking the operative one. There is often no
 document that contains the operative one, and no amount of reading finds it —
 the only thing that surfaced it was opening the pull request and being told.
 
+**And a third time, which is the worst of the three, because it published a wrong
+instruction.** Satisfying that bot's requirement meant configuring a build on a
+directory platform. Its published methodology describes adding a Dockerfile, so a
+four-line Dockerfile was written, committed, and mirrored publicly — with the
+file telling the reader to paste it.
+
+The platform does not take a Dockerfile. It generates its own Debian image with
+Python installed through `uv`, does not put `pip` on the path, and accepts an
+array of build steps plus a startup command that it wraps in a proxy. The first
+build failed on the second line:
+
+```
+/bin/sh: 1: pip: not found
+```
+
+Nothing had run it. It went into a public file on the strength of a description,
+and the description was a fair summary of the platform that happened not to be
+the platform's interface.
+
+**The same mistake also went the other way, an hour earlier.** Searching the
+directory for the package returned nothing, and that was read as "the submission
+failed". It had succeeded; the public search index had not caught up, and the
+account dashboard — authoritative, and not checked before concluding — would have
+said so. Absence from a search result is not absence from a system.
+
+*What catches all three:* nothing automatic, and probably nothing automatic can.
+The habit is the whole of it. A repository's rules are not its state; a
+contributing guide is not the merge requirement; a methodology page is not the
+API; a search result is not the database. The only thing that establishes what a
+system does is making it do it, and where that is impossible from here — the
+platform is blocked by this machine's egress proxy — the honest move is to record
+the claim as reported rather than as checked, which is what `registry/LISTINGS.md`
+now does.
+
 ---
 
 ## Caught: a promise that stopped at the package boundary

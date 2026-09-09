@@ -193,26 +193,67 @@ code says the same — `on_list_tools` returns a static list and startup only
 calls `.resolve()`, which does not require the path to exist — but reading the
 code is what `CORPUS.md` is about, so it was executed.
 
-That makes the Dockerfile, if one is ever needed, four lines and not a project:
+**The build spec, as it actually built.** Glama does not take a Dockerfile. It
+generates its own Debian image with Python installed through `uv` — and `pip`
+not on the path — then accepts an array of build steps and a startup command,
+which it wraps in `mcp-proxy`:
 
-```dockerfile
-FROM python:3.12-slim
-RUN pip install --no-cache-dir 'glitch-toolkit[mcp]'
-WORKDIR /repo
-ENTRYPOINT ["glitch-mcp", "--repo", "."]
+```
+build steps:
+  python -m venv /opt/glitch
+  ln -s /opt/glitch/bin/pip /usr/local/bin/pip
+  pip install --no-cache-dir 'glitch-toolkit[mcp]'
+  ln -s /opt/glitch/bin/glitch-mcp /usr/local/bin/glitch-mcp
+
+startup command:
+  ["glitch-mcp", "--repo", "."]
 ```
 
-**3.12 and not 3.13, deliberately.** The `full` CI job is the only one that
-installs the `[mcp]` extra and exercises the server, and it runs on 3.12; the
-empty-directory handshake above was run on 3.11. The core matrix covers 3.13 but
-covers the *package*, not the server. So 3.13 would be an unverified claim in a
-build spec, which is the same shape as claiming an operating system nothing had
-tested. It almost certainly works; nothing has checked, so the file does not say
-it does.
+~~This section previously carried a four-line Dockerfile — `FROM
+python:3.12-slim`, `RUN pip install ...`, `WORKDIR /repo`, `ENTRYPOINT
+["glitch-mcp", "--repo", "."]` — and instructed the reader to paste it on
+Glama's admin page.~~ **That is the block that failed**, and the file said to use
+it. Superseded 2026-09-09 rather than deleted, because the obvious-looking answer
+being the broken one is the useful part:
 
-**Checked 2026-09-09: it is not on Glama.** There is no auto-indexed profile, so
-the badge is not a copy-paste and the full flow is required — submit, claim,
-paste the Dockerfile above on their admin page, deploy, wait for the build test.
+```
+/bin/sh: 1: pip: not found
+process "/bin/sh -c (pip install --no-cache-dir 'glitch-toolkit[mcp]')" did not
+complete successfully: exit code: 127
+```
+
+It was written from Glama's published methodology rather than from Glama, and it
+was committed and mirrored before anything tried it. `CORPUS.md` carries it.
+
+**3.12 remains correct, and now for a second reason.** Glama's image is Python
+3.12, and 3.12 is the version the `full` CI job installs the `[mcp]` extra on and
+exercises the server with. The empty-directory handshake above ran on 3.11. The
+core matrix covers 3.13, but it covers the *package* — no extra, no server
+started — so 3.13 would still be an unverified claim.
+
+**Checked 2026-09-09: not findable on Glama by search.** That reading was wrong,
+and the way it was wrong is worth keeping. The submission had in fact succeeded;
+the public search index simply had not caught up, and the account dashboard —
+which is authoritative and was not checked before concluding — would have shown
+it. A directory's search results are a view of its state, not its state.
+
+**LISTED, as reported by a handoff run on 2026-09-09 and NOT verified here.**
+`glama.ai` is blocked by the egress proxy on the machine this file is written
+from, so every claim in this paragraph is on that report's word rather than
+checked, exactly as an mcpservers.org submission is not a listing until it
+appears:
+
+- profile at <https://glama.ai/mcp/servers/AbstractGlitch/glitch-toolkit>,
+  claimed and verified as belonging to AbstractGlitch
+- a Glama release published as 0.1.3; the successful build reported
+  `glitch 0.1.3` and returned all three read-only tools
+- **tier B**, which is what the awesome-list requirement needs
+
+One loose end, stated rather than smoothed: the individual tool-quality
+evaluations are still marked `pending`, so there is no numeric score. A tier is
+normally derived from a score, so a tier without one is worth re-reading when the
+evaluations finish rather than treated as settled. If it moves, the three gaps in
+`RELEASING.md` are the likely reason and the likely fix.
 
 **Submitting with 0.1.3 as it stands is a decision, not an oversight.** Glama's
 score is 70% tool definition quality and 30% server coherence, and it re-scores
@@ -260,7 +301,8 @@ separate piece of work with its own decision in it.
 | Official MCP registry | **listed 8 Sep, 0.1.3, active** | nothing; re-publish only on a release |
 | mcpservers.org | **submitted 9 Sep** | wait; a submission is not a listing |
 | appcypher/awesome-mcp-servers | **archived 1 Aug 2026, dead** | nothing; PRs are disabled |
-| punkpeye/awesome-mcp-servers | **PR #14062 open, blocked on Glama** | look whether Glama already indexes it; then badge, or withdraw |
+| punkpeye/awesome-mcp-servers | **PR #14062 open, Glama gate cleared** | owner confirms the badge renders, then adds it to `patch-1` |
+| Glama directory | **listed 9 Sep, tier B** (reported, unverified here) | re-read the score when the evaluations finish |
 | Claude Code plugin directory | not started, **out of scope** | a separate piece of work with its own decision |
 
 Two of four are done. One is a quarter of an hour whenever it is wanted, or an
