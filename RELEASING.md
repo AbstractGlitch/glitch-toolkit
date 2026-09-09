@@ -300,6 +300,36 @@ glitch install
 glitch status
 ```
 
+## Carry these into the next release, whenever it happens
+
+Not blockers, and not a reason to make a release. They are here because this is
+the file that gets read before an upload, and they are otherwise the kind of item
+that waits forever.
+
+**Three tool definitions do not tell an agent enough.** Found on 2026-09-09 while
+working out what a directory's quality score measures, which turned out to be a
+useful question independently of the score: does each tool describe itself well
+enough for an agent to use it correctly? Reading `describe_tools()` in
+`src/glitch/mcp_server.py` against that, three gaps, none cosmetic:
+
+- [ ] `glitch_ledger_tail`'s `limit` carries `minimum`, `maximum` and `default`
+      and **no `description`**. An agent is told the bounds and not the meaning.
+- [ ] `glitch_check`'s `step` describes itself as `"one of: rules, lanes, ..."`,
+      which restates the enum rather than explaining it, and never says that
+      **omitting it runs all six** — behaviour the tool description mentions and
+      the parameter does not.
+- [ ] None of the three says *when* an agent should reach for it. Purpose is
+      clear; usage guidance is absent.
+
+What is already good and should not be disturbed while fixing those: the
+behavioural transparency in `glitch_status` (a failing step usually means the
+reader has not written their own file yet, which is work rather than a bug), the
+consistent `glitch_*` naming, and three tools being a coherent count for a
+read-only checker.
+
+The score itself is a proxy. Fix these because an agent needs them, and let the
+grade follow.
+
 ## What must be true before uploading
 
 All five held for 0.1.0. They are a checklist for the NEXT release, not a record

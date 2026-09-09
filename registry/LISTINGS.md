@@ -202,11 +202,17 @@ WORKDIR /repo
 ENTRYPOINT ["glitch-mcp", "--repo", "."]
 ```
 
-**What is not decided.** Whether Glama has already auto-indexed the repository
-with a passing inferred build is unknown; if it has, the badge is a copy-paste
-and nothing above is needed. That check could not be made from the machine this
-was written on, because `glama.ai` is blocked by its egress proxy. It is a
-five-minute look and it comes before anything else.
+**Checked 2026-09-09: it is not on Glama.** There is no auto-indexed profile, so
+the badge is not a copy-paste and the full flow is required — submit, claim,
+paste the Dockerfile above on their admin page, deploy, wait for the build test.
+
+**Submitting with 0.1.3 as it stands is a decision, not an oversight.** Glama's
+score is 70% tool definition quality and 30% server coherence, and it re-scores
+on every introspection sweep. So a later release lifts the grade automatically,
+and making a fourth release in two days *for the grade* would be the proxy
+driving the product. The three real gaps that check exposed are written into
+`RELEASING.md` instead, to be picked up by whatever release happens next for its
+own reasons.
 
 *Two things went wrong on the way and are worth keeping.* The entry was first
 pasted one line too low, below the `### Delivery` heading rather than above it,
