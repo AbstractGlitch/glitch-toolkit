@@ -172,10 +172,20 @@ requests open on that repository it should not be expected quickly.
 **BLOCKED, within the hour, on a third party.** `github-actions[bot]` commented
 on the pull request with a listing requirement that is not in the contributing
 guide: the server must be listed on **Glama** (`glama.ai/mcp/servers`) and pass
-its checks, and the pull request must then carry a Glama **score badge** after
-the description. Glama builds and runs the server in a sandbox and performs the
-standard introspection exchange; the Dockerfile is configured on **Glama's admin
-page**, not committed here.
+its checks, and the pull request must then carry a Glama **score badge**. Glama
+builds and runs the server in a sandbox and performs the standard introspection
+exchange; what it builds from is configured on **Glama's admin page**, not
+committed here. ~~The Dockerfile is configured there.~~ It is not a Dockerfile,
+though this paragraph said so for a day; the build spec below carries the
+correction and the failure that produced it.
+
+**Where the badge goes was settled by reading the list, not the instruction.**
+The bot said "after the server description", which puts it at the end of the
+line. All 269 badged entries in this category put it immediately after the
+repository link, before the emoji markers. Following the instruction literally
+would have produced the only entry in 269 formatted differently — passing the
+stated check and failing the list it was checking for. When a stated
+requirement and the corpus it governs disagree, read the corpus.
 
 So merging is not the maintainer's decision alone. It is gated on a commercial
 directory's build system. That was invisible when the surface was chosen, and it
@@ -252,11 +262,25 @@ appears:
   `glitch 0.1.3` and returned all three read-only tools
 - **tier B**, which is what the awesome-list requirement needs
 
+**One of those three is no longer on the report's word.** The badge endpoint
+under that profile was opened in a browser on 2026-09-09 and served a real
+score image — seen rather than relayed. That establishes two things and no
+more: the profile resolves at that path, and Glama serves a grade for it. It
+confirms neither the release, nor the build output, nor the tool count; those
+stay on the handoff's word. Letting one checked fact stand in for an unchecked
+set is the substitution this package exists to catch, and the flag on the
+paragraph above stays where it is.
+
 One loose end, stated rather than smoothed: the individual tool-quality
 evaluations are still marked `pending`, so there is no numeric score. A tier is
 normally derived from a score, so a tier without one is worth re-reading when the
 evaluations finish rather than treated as settled. If it moves, the three gaps in
 `RELEASING.md` are the likely reason and the likely fix.
+
+The badge sharpens that end rather than closing it: a grade is being served
+while the evaluations that should produce it still read `pending`. Either the
+grade has an input this file has not identified, or it is a placeholder awaiting
+one. Both readings point the same way — re-read it when the evaluations finish.
 
 **Submitting with 0.1.3 as it stands is a decision, not an oversight.** Glama's
 score is 70% tool definition quality and 30% server coherence, and it re-scores
@@ -266,7 +290,17 @@ driving the product. The three real gaps that check exposed are written into
 `RELEASING.md` instead, to be picked up by whatever release happens next for its
 own reasons.
 
-*Two things went wrong on the way and are worth keeping.* The entry was first
+**BADGE ADDED 2026-09-09**, committed directly to `patch-1` as a second commit
+rather than a second pull request. Verified by fetching the branch and diffing
+it against the fork's `main`, not by reading the pull request header: one
+occurrence of `glitch-toolkit`, byte-identical to the drafted line, at the end
+of Developer Tools directly above `### Delivery`, and a whole-file diff of
+`1708a1709` — one line added, nothing removed, nothing else touched. The
+heading had no blank line before it in the base either, so that shape is
+unchanged. Nothing further is owed on this surface; merging is a maintainer's
+decision in a queue roughly 2,200 deep.
+
+*Three things went wrong on the way and are worth keeping.* The entry was first
 pasted one line too low, below the `### Delivery` heading rather than above it,
 which would have filed a guardrail checker under courier logistics. The cause is
 worth naming: the last entry in the section wraps across six display rows and is
@@ -275,6 +309,14 @@ web editor. It was caught by looking at the result before committing rather than
 by any rule. The absence of a duplicate, and which entry is currently last, were
 both re-checked against the live README immediately before the paste, because
 both had moved since the first draft.
+
+Third, the expected shape of the badge commit was stated as "1 addition, 1
+deletion" — which is that commit's own diff, and not the pull request's. The
+pull request is diffed against `punkpeye:main`, which never held the line, so
+its correct reading is one addition and no deletion. A number was carried from
+the wrong baseline, and a confirmation step that had been given a wrong success
+criterion would have raised a false alarm on a clean result. It was caught by
+computing the diff instead of accepting the prediction.
 
 ---
 
@@ -304,10 +346,14 @@ separate piece of work with its own decision in it.
 | Official MCP registry | **listed 8 Sep, 0.1.3, active** | nothing; re-publish only on a release |
 | mcpservers.org | **submitted 9 Sep** | wait; a submission is not a listing |
 | appcypher/awesome-mcp-servers | **archived 1 Aug 2026, dead** | nothing; PRs are disabled |
-| punkpeye/awesome-mcp-servers | **PR #14062 open, Glama gate cleared** | owner confirms the badge renders, then adds it to `patch-1` |
+| punkpeye/awesome-mcp-servers | **PR #14062 open, badge added 9 Sep, gate cleared** | nothing; a maintainer's queue of ~2,200 |
 | Glama directory | **listed 9 Sep, tier B** (reported, unverified here) | re-read the score when the evaluations finish |
 | Claude Code plugin directory | not started, **out of scope** | a separate piece of work with its own decision |
 
-Two of four are done. One is a quarter of an hour whenever it is wanted, or an
-explicit withdrawal, and either passes. One was mis-scoped and came out of p1f
-rather than sitting in it failing.
+Everything p1f can finish on this side is finished. The registry listing is
+live and checked here. Glama is listed on a handoff's report, of which one
+part — the profile and its served grade — has now been seen first-hand.
+mcpservers.org is lodged, and a submission is not a listing until it appears.
+punkpeye is complete and waiting on a maintainer. Of the two that are not
+shipped, one was archived before it was tried and one was mis-scoped, and it
+came out of p1f rather than sitting inside it failing.
