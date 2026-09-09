@@ -169,6 +169,45 @@ nothing else touched, no conflicts with the base branch. Their own submission
 check runs on it; merging is a separate matter, and with roughly 2,200 pull
 requests open on that repository it should not be expected quickly.
 
+**BLOCKED, within the hour, on a third party.** `github-actions[bot]` commented
+on the pull request with a listing requirement that is not in the contributing
+guide: the server must be listed on **Glama** (`glama.ai/mcp/servers`) and pass
+its checks, and the pull request must then carry a Glama **score badge** after
+the description. Glama builds and runs the server in a sandbox and performs the
+standard introspection exchange; the Dockerfile is configured on **Glama's admin
+page**, not committed here.
+
+So merging is not the maintainer's decision alone. It is gated on a commercial
+directory's build system. That was invisible when the surface was chosen, and it
+is a fact about the surface rather than about this package.
+
+*Do not read the list itself as evidence the badge was always required.* 269 of
+the 483 entries in that category carry one and 214 do not; the requirement is
+new and the older entries are grandfathered.
+
+**The introspection bar is met, and this was run rather than reasoned.** In a
+clean virtualenv with `glitch-toolkit[mcp]` from PyPI, launched from an entirely
+empty directory, the server answered `initialize` reporting `glitch 0.1.3` and
+returned all three tools to `tools/list`, with nothing on stderr. Reading the
+code says the same — `on_list_tools` returns a static list and startup only
+calls `.resolve()`, which does not require the path to exist — but reading the
+code is what `CORPUS.md` is about, so it was executed.
+
+That makes the Dockerfile, if one is ever needed, four lines and not a project:
+
+```dockerfile
+FROM python:3.13-slim
+RUN pip install --no-cache-dir 'glitch-toolkit[mcp]'
+WORKDIR /repo
+ENTRYPOINT ["glitch-mcp", "--repo", "."]
+```
+
+**What is not decided.** Whether Glama has already auto-indexed the repository
+with a passing inferred build is unknown; if it has, the badge is a copy-paste
+and nothing above is needed. That check could not be made from the machine this
+was written on, because `glama.ai` is blocked by its egress proxy. It is a
+five-minute look and it comes before anything else.
+
 *Two things went wrong on the way and are worth keeping.* The entry was first
 pasted one line too low, below the `### Delivery` heading rather than above it,
 which would have filed a guardrail checker under courier logistics. The cause is
@@ -207,7 +246,7 @@ separate piece of work with its own decision in it.
 | Official MCP registry | **listed 8 Sep, 0.1.3, active** | nothing; re-publish only on a release |
 | mcpservers.org | **submitted 9 Sep** | wait; a submission is not a listing |
 | appcypher/awesome-mcp-servers | **archived 1 Aug 2026, dead** | nothing; PRs are disabled |
-| punkpeye/awesome-mcp-servers | **PR #14062 open, 9 Sep** | wait; theirs to merge, and they are 2,200 deep |
+| punkpeye/awesome-mcp-servers | **PR #14062 open, blocked on Glama** | look whether Glama already indexes it; then badge, or withdraw |
 | Claude Code plugin directory | not started, **out of scope** | a separate piece of work with its own decision |
 
 Two of four are done. One is a quarter of an hour whenever it is wanted, or an

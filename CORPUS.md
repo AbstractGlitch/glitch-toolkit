@@ -211,6 +211,19 @@ anything — one field, `archived`, on the API, or the banner at the top of the
 page. Recorded here because the next list will look exactly as alive from
 `raw.githubusercontent.com` as this one did.
 
+**And the same shape one turn further on, on the list that replaced it.** The
+pull request was opened against a live repository whose contributing guide
+describes exactly how to contribute, and that guide is accurate. Within the hour
+a bot commented with the requirement that actually governs merging: the server
+must first be listed on a commercial third-party directory, which builds and
+runs it, and the pull request must then carry that directory's score badge. None
+of that is in the contributing guide, because the guide describes how to *open* a
+pull request and the bot enforces what it takes to *merge* one.
+
+Checking the stated process is not checking the operative one. There is often no
+document that contains the operative one, and no amount of reading finds it —
+the only thing that surfaced it was opening the pull request and being told.
+
 ---
 
 ## Caught: a promise that stopped at the package boundary
