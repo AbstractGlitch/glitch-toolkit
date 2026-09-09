@@ -239,9 +239,19 @@ build failed on the second line:
 /bin/sh: 1: pip: not found
 ```
 
-Nothing had run it. It went into a public file on the strength of a description,
-and the description was a fair summary of the platform that happened not to be
-the platform's interface.
+Nothing had run it. It went into a committed file on the strength of a
+description, and the description was a fair summary of the platform that happened
+not to be the platform's interface.
+
+*And then the entry you are reading got its own reach wrong.* As first written,
+this paragraph said the block had been **mirrored** — published where a stranger
+would follow it. The pre-push inspection found otherwise: the mirror's head was
+the subtree split of a commit that predated the block, and the live file carried
+no such line. It had never left the private monorepo. That claim was made by
+reasoning about what had been committed rather than by reading the mirror, which
+is this entry's own subject, committed inside this entry. What settled it was
+`git ls-remote`, a computed `git subtree split`, and fetching the published file
+— asking the system instead of the record of the system.
 
 **The same mistake also went the other way, an hour earlier.** Searching the
 directory for the package returned nothing, and that was read as "the submission

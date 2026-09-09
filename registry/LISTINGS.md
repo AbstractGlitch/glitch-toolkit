@@ -222,8 +222,11 @@ process "/bin/sh -c (pip install --no-cache-dir 'glitch-toolkit[mcp]')" did not
 complete successfully: exit code: 127
 ```
 
-It was written from Glama's published methodology rather than from Glama, and it
-was committed and mirrored before anything tried it. `CORPUS.md` carries it.
+It was written from Glama's published methodology rather than from Glama, and
+committed before anything tried it. It never reached the public mirror: the last
+subtree push predated the commit that introduced it, which was established by
+reading the mirror rather than by assuming — an earlier draft of this sentence
+said it had been mirrored and was wrong. `CORPUS.md` carries both halves.
 
 **3.12 remains correct, and now for a second reason.** Glama's image is Python
 3.12, and 3.12 is the version the `full` CI job installs the `[mcp]` extra on and
