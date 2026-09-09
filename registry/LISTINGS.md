@@ -13,7 +13,7 @@ submission form.
 **State, 9 September 2026.** The official registry is **listed and active**. The
 mcpservers.org submission is **in**, made by the owner on 9 September; a
 submission is not a listing, so it proves nothing until it appears. The
-`punkpeye` pull request is **drafted and open** — `appcypher`, the list this
+`punkpeye` pull request is **open as #14062** — `appcypher`, the list this
 step originally targeted, turned out to have been archived since August. The
 plugin directory is out of
 scope and says why below.
@@ -28,8 +28,9 @@ worth a fortnight. The step with actual reach is the incident writeup, which is
 a different step and a harder one.
 
 Gate A allows a step to pass by being **explicitly withdrawn** as well as done.
-So deciding not to open the `punkpeye` pull request, and saying so here, is a
-pass. What fails Gate A is drift: not doing it and not deciding, then reading a
+That provision is moot for this surface now that the pull request is open, but
+it stands for the plugin directory and for whatever surface comes next. What
+fails Gate A is drift: not doing something and not deciding, then reading a
 false negative on 22 September.
 
 ---
@@ -162,9 +163,21 @@ carries it. Suggested title:
 Add glitch-toolkit to Developer Tools 🤖🤖🤖
 ```
 
-The absence of a duplicate was checked against the live README and must be
-checked again at the moment of the PR, along with which entry is currently last
-in the section.
+**OPENED 2026-09-09** as
+<https://github.com/punkpeye/awesome-mcp-servers/pull/14062>, one line added and
+nothing else touched, no conflicts with the base branch. Their own submission
+check runs on it; merging is a separate matter, and with roughly 2,200 pull
+requests open on that repository it should not be expected quickly.
+
+*Two things went wrong on the way and are worth keeping.* The entry was first
+pasted one line too low, below the `### Delivery` heading rather than above it,
+which would have filed a guardrail checker under courier logistics. The cause is
+worth naming: the last entry in the section wraps across six display rows and is
+one logical line, so "put the cursor at the end of the line" is ambiguous in a
+web editor. It was caught by looking at the result before committing rather than
+by any rule. The absence of a duplicate, and which entry is currently last, were
+both re-checked against the live README immediately before the paste, because
+both had moved since the first draft.
 
 ---
 
@@ -194,7 +207,7 @@ separate piece of work with its own decision in it.
 | Official MCP registry | **listed 8 Sep, 0.1.3, active** | nothing; re-publish only on a release |
 | mcpservers.org | **submitted 9 Sep** | wait; a submission is not a listing |
 | appcypher/awesome-mcp-servers | **archived 1 Aug 2026, dead** | nothing; PRs are disabled |
-| punkpeye/awesome-mcp-servers | entry drafted, **open** | the owner opens it, or withdraws it on the record |
+| punkpeye/awesome-mcp-servers | **PR #14062 open, 9 Sep** | wait; theirs to merge, and they are 2,200 deep |
 | Claude Code plugin directory | not started, **out of scope** | a separate piece of work with its own decision |
 
 Two of four are done. One is a quarter of an hour whenever it is wanted, or an
