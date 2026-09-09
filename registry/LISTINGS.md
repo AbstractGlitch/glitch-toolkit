@@ -13,7 +13,9 @@ submission form.
 **State, 9 September 2026.** The official registry is **listed and active**. The
 mcpservers.org submission is **in**, made by the owner on 9 September; a
 submission is not a listing, so it proves nothing until it appears. The
-`appcypher` pull request is **drafted and open**. The plugin directory is out of
+`punkpeye` pull request is **drafted and open** — `appcypher`, the list this
+step originally targeted, turned out to have been archived since August. The
+plugin directory is out of
 scope and says why below.
 
 **And the ranking, which was not written down and should have been.** These four
@@ -26,7 +28,7 @@ worth a fortnight. The step with actual reach is the incident writeup, which is
 a different step and a harder one.
 
 Gate A allows a step to pass by being **explicitly withdrawn** as well as done.
-So deciding not to open the `appcypher` pull request, and saying so here, is a
+So deciding not to open the `punkpeye` pull request, and saying so here, is a
 pass. What fails Gate A is drift: not doing it and not deciding, then reading a
 false negative on 22 September.
 
@@ -114,26 +116,55 @@ about the queue rather than about the package.
 
 ---
 
-## 3. `appcypher/awesome-mcp-servers` — a pull request
+## 3. An awesome-list pull request — and which list
 
-Takes PRs. Its contributing guidelines ask for: no duplicates, alphabetical
-order, and the entry added to the bottom of the relevant category. The literal
-format in the README is:
+**`appcypher/awesome-mcp-servers` is dead.** Archived by its owner on
+2026-08-01, read-only, pull requests disabled. This was discovered at the edit
+page, after the entry for it had been drafted, the category chosen and the
+contributing rules read. Every one of those checks was made against files
+fetched from `raw.githubusercontent.com`, which serve perfectly well from an
+archived repository. **Nothing had checked whether the repository was alive.**
+Recorded in `CORPUS.md`; it is the same shape as the rest of that file.
+
+Two other lists were then looked at properly:
+
+- **`wong2/awesome-mcp-servers`** — alive, but its README says *"We do not
+  accept PRs. Please submit your MCP on the website"*. That website is
+  mcpservers.org, which is surface 2 above and already submitted.
+- **`punkpeye/awesome-mcp-servers`** — alive, and roughly twenty times the
+  size. This is the target.
+
+**The entry, in that list's own format.** It uses a legend of emoji markers
+rather than the icons the dead list used: 🐍 Python codebase, 🏠 local service,
+🍎 🪟 🐧 for operating systems. No 🎖️, which means official protocol
+implementation and is not us. The category is **Developer Tools**, appended at
+the bottom, because that section is in insertion order rather than alphabetical.
 
 ```
-- [name](url) - Description.
+- [AbstractGlitch/glitch-toolkit](https://github.com/AbstractGlitch/glitch-toolkit) 🐍 🏠 🍎 🪟 🐧 - Read-only checks over a repository's own guardrails, failing any that are present but have stopped refusing anything. Every answer is appended to a local append-only ledger. No network calls and no writes to the repository being checked. `uvx --from 'glitch-toolkit[mcp]' glitch-mcp`
 ```
 
-Draft entry, for **Development Tools** (the closest category; there is no
-category for guardrails, and inventing one in the same PR that adds an entry is
-how a list PR gets closed):
+**The 🍎 was earned rather than assumed.** The marker asks which operating
+systems the server runs on. CI covered Linux and Windows; nothing had ever run
+on macOS. The package is standard library only with no OS-specific code, so it
+almost certainly worked and omitting the marker would have been misleading in
+the other direction — but claiming it would have been an unverified assertion in
+somebody else's README, which is the exact thing this package exists to object
+to. A `macos-latest` job was added to the test matrix instead, so the marker is
+a checked fact.
+
+**Their contributing file asks agents to say so.** *"If you are an automated
+agent, we have a streamlined process for merging agent PRs. Just add `🤖🤖🤖` to
+the end of the PR title to opt-in."* This entry was drafted by one, so the title
+carries it. Suggested title:
 
 ```
-- [glitch](https://github.com/AbstractGlitch/glitch-toolkit) - Read-only checks over a repository's own guardrails that fail a check which is present and has stopped refusing anything. Appends every answer to a local append-only ledger. No network calls and no writes to the repository being checked.
+Add glitch-toolkit to Developer Tools 🤖🤖🤖
 ```
 
-Alphabetical position and the absence of a duplicate must be checked against the
-list at the moment of the PR, not against this file.
+The absence of a duplicate was checked against the live README and must be
+checked again at the moment of the PR, along with which entry is currently last
+in the section.
 
 ---
 
@@ -162,7 +193,8 @@ separate piece of work with its own decision in it.
 |---|---|---|
 | Official MCP registry | **listed 8 Sep, 0.1.3, active** | nothing; re-publish only on a release |
 | mcpservers.org | **submitted 9 Sep** | wait; a submission is not a listing |
-| appcypher/awesome-mcp-servers | entry drafted, **open** | the owner opens it, or withdraws it on the record |
+| appcypher/awesome-mcp-servers | **archived 1 Aug 2026, dead** | nothing; PRs are disabled |
+| punkpeye/awesome-mcp-servers | entry drafted, **open** | the owner opens it, or withdraws it on the record |
 | Claude Code plugin directory | not started, **out of scope** | a separate piece of work with its own decision |
 
 Two of four are done. One is a quarter of an hour whenever it is wanted, or an

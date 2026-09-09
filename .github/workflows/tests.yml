@@ -56,6 +56,18 @@ jobs:
             # 3.13, because that is what the owner's own Windows machine runs and
             # a reader like them is the configuration worth covering.
             python: "3.13"
+          # macOS is here for a specific reason and it is worth writing down.
+          # On 2026-09-09 an entry was being drafted for a public list whose
+          # legend asks which operating systems a server runs on. The honest
+          # answer was "Linux and Windows, because that is what CI covers" —
+          # while the package is standard library only with no OS-specific code,
+          # so it almost certainly ran on macOS and claiming otherwise would
+          # have been misleading in the other direction. Rather than publish an
+          # unverified marker or a cautious falsehood, the claim was made
+          # checkable. That is the whole argument of this package applied to a
+          # line in somebody else's README.
+          - os: macos-latest
+            python: "3.13"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

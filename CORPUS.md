@@ -16,7 +16,7 @@ nobody to protect here but the author. Nothing in this file is a credential, a k
 customer data, revenue or campaign detail, and that boundary does not move.
 
 All of these are from **8 September 2026** unless dated otherwise. One day, one
-repository, eighteen entries. That is not unusual; it is what happens the first
+repository, nineteen entries. That is not unusual; it is what happens the first
 time anything looks.
 
 ---
@@ -181,6 +181,35 @@ in prose and `roadmap-studio` has a test that fails if its seeded data is
 double-encoded again. A general check — no BOM, no mojibake, no CRLF where the
 repository says LF — is the strongest candidate for the next artifact here, and
 it does not exist yet.
+
+---
+
+## Caught: verifying the documentation instead of the system
+
+**An entry drafted for a repository that had been read-only since August.**
+`appcypher/awesome-mcp-servers` was chosen as a listing target. Its
+`CONTRIBUTING.md` was read and quoted, its entry format was derived from its
+`README.md`, its categories were compared and one was chosen, and the list was
+searched for duplicates. All four checks passed. All four were made against
+files fetched from `raw.githubusercontent.com`, which serves them exactly the
+same whether a repository is alive or archived.
+
+The repository was archived by its owner on 2026-08-01. Pull requests are
+disabled. The banner saying so is on the repository page, which nothing had
+opened, and the state is one field in the API, which nothing had asked for.
+
+*What this is.* Every check confirmed what the repository **says**. None
+confirmed what it **does**. A contributing guide describing how to open a pull
+request is not evidence that pull requests can be opened, any more than a green
+test is evidence that a check still refuses — it is the same substitution of the
+description for the thing, and it survived four separate verifications because
+all four were of the description.
+
+*What catches it:* nothing automatic. The habit that would have: before
+trusting a repository's rules, ask the repository whether it is accepting
+anything — one field, `archived`, on the API, or the banner at the top of the
+page. Recorded here because the next list will look exactly as alive from
+`raw.githubusercontent.com` as this one did.
 
 ---
 
