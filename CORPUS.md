@@ -285,7 +285,33 @@ The correction is not "read harder". It is that a channel you do not own has ter
 you cannot fully know until you try, and the only honest plan treats the first
 attempt as the test rather than as the launch.
 
-*What catches all four:* nothing automatic, and probably nothing automatic can.
+**The rule that stopped it was not in the rules.** 2026-09-10, hours after the
+one above. Hacker News having closed, the launch post moved to r/ClaudeAI, and
+this time the room's rules were read properly first: all twelve, from the
+sidebar, before a word was drafted. `content/STANDING_RULES.md` section 6 has
+demanded exactly that since 26 August and its table had said `not yet` ever
+since. Rule 7 permits showcase posts on condition that they educate, so the
+answer was yes, and the reading even caught a second problem nobody had
+suspected: the draft was a PostgreSQL postmortem in a subreddit about Claude,
+and would have failed rule 2 on relevance.
+
+Then the post was written, the fields filled, and a notice appeared under the
+body box: *"We now require total reddit karma >=50 to submit a post on the feed."*
+Not in the twelve rules. Visible only in the composer, only for showcase posts,
+and only once there is a post to submit. The account was under 50.
+
+So the sidebar was read in full, correctly, at source, and the binding condition
+was somewhere the sidebar does not go. Reading the published rules is necessary
+and it is not sufficient, because a platform's terms live in three places at
+once: what it publishes, what it enforces, and what it only mentions at the
+moment you act.
+
+The fourth and the fifth are the same shape and it is worth naming: both are
+gates on **who is asking** rather than on **what is being submitted**. No amount
+of reading finds those, because they are not facts about the rules. They are
+facts about the account.
+
+*What catches all five:* nothing automatic, and probably nothing automatic can.
 The habit is the whole of it. A repository's rules are not its state; a
 contributing guide is not the merge requirement; a methodology page is not the
 API; a search result is not the database. The only thing that establishes what a
