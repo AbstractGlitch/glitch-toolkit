@@ -259,7 +259,33 @@ failed". It had succeeded; the public search index had not caught up, and the
 account dashboard — authoritative, and not checked before concluding — would have
 said so. Absence from a search result is not absence from a system.
 
-*What catches all three:* nothing automatic, and probably nothing automatic can.
+**The rules were read at source, and the platform still said no.** 2026-09-10.
+`research/CHANNEL_MAP_2026-08-26.md` is the only document in this repository graded
+**A**, and it earned that grade for exactly the right reason: its Show HN rules were
+quoted from `news.ycombinator.com/showhn.html` rather than from a summary. It
+settled what qualifies, what is off topic, and which of two assets to submit. Every
+word of it was correct.
+
+The submission was refused anyway. Not on the content, and not on the title. Hacker
+News currently restricts Show HN from accounts that are new, and says so on a page
+you only reach by pressing submit: *"We are temporarily restricting Show HNs because
+of a massive influx, mostly by users who aren't yet familiar with the site or its
+culture."* That restriction is not in `showhn.html`. Reading the published rules at
+source, which is the strongest form of the habit this file keeps recommending, did
+not surface it, because it is a property of the account and the moment rather than
+of the rules.
+
+This is the third in a week and they are the same shape. `appcypher` was archived and
+read-only while four checks passed against files that serve identically either way.
+punkpeye's merge turned out to be gated on a Glama badge that appears in no
+contributing guide. Now this. Three rented distribution surfaces, three requirements
+that could not be read in advance from anything the surface publishes.
+
+The correction is not "read harder". It is that a channel you do not own has terms
+you cannot fully know until you try, and the only honest plan treats the first
+attempt as the test rather than as the launch.
+
+*What catches all four:* nothing automatic, and probably nothing automatic can.
 The habit is the whole of it. A repository's rules are not its state; a
 contributing guide is not the merge requirement; a methodology page is not the
 API; a search result is not the database. The only thing that establishes what a

@@ -349,6 +349,15 @@ separate piece of work with its own decision in it.
 | punkpeye/awesome-mcp-servers | **PR #14062 open, badge added 9 Sep, gate cleared** | nothing; a maintainer's queue of ~2,200 |
 | Glama directory | **listed 9 Sep, tier B** (reported, unverified here) | re-read the score when the evaluations finish |
 | Claude Code plugin directory | not started, **out of scope** | a separate piece of work with its own decision |
+| Hacker News, Show HN | **refused 10 Sep: new accounts restricted** | not a listing surface; recorded here because it was attempted. See `CORPUS.md` |
+
+**Hacker News is in that table without belonging in it.** Show HN is a launch channel rather
+than a listing, and it is recorded because it was tried on 2026-09-10 and refused: the
+account was new, and Show HN is currently restricted for new accounts. The refusal is
+not about this package. `research/CHANNEL_MAP_2026-08-26.md` had read `showhn.html` at
+source and was right about every rule on it; the restriction is not on that page. The
+launch post moved to r/ClaudeAI, which satisfies Gate A on its own wording, and the Show
+HN waits until there is standing to post one. `CORPUS.md` carries the entry.
 
 Everything p1f can finish on this side is finished. The registry listing is
 live and checked here. Glama is listed on a handoff's report, of which one
