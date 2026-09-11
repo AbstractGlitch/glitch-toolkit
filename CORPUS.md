@@ -205,11 +205,39 @@ test is evidence that a check still refuses — it is the same substitution of t
 description for the thing, and it survived four separate verifications because
 all four were of the description.
 
-*What catches it:* nothing automatic. The habit that would have: before
-trusting a repository's rules, ask the repository whether it is accepting
-anything — one field, `archived`, on the API, or the banner at the top of the
-page. Recorded here because the next list will look exactly as alive from
-`raw.githubusercontent.com` as this one did.
+*What catches it:* `plan_check.py`, since 2026-09-11. A step in a plan that
+reaches for something outside the repository — opens a pull request against it,
+lists on it, submits to it — and carries no dated **Checked** line saying what
+was asked of it and what it answered, is refused. The PLAN.md template carries
+the line and an example of the difference: *their CONTRIBUTING.md says pull
+requests are welcome* is the description; *the API's `archived` field is false*
+is the thing. `glitch check plan` runs a plan with exactly that one defect
+against the installed artifact on every check, and `tests/test_cli.py`
+PARTIAL_SABOTAGE removes the rule and requires the suite to go red.
+
+**Superseded, and kept because the reason it was written is the finding.** The
+line above read, from 2026-09-09 until 2026-09-11:
+
+> *What catches it:* nothing automatic. The habit that would have: before
+> trusting a repository's rules, ask the repository whether it is accepting
+> anything — one field, `archived`, on the API, or the banner at the top of the
+> page. Recorded here because the next list will look exactly as alive from
+> `raw.githubusercontent.com` as this one did.
+
+That was true when written and is what the entry was for: a habit nobody
+automated is a habit that lasts until the day somebody is in a hurry.
+
+**What the artifact does not do, so this line is not read as more than it is.**
+It does not ask anything. The liveness check itself is deliberately not in the
+package: `glitch` has no dependencies and makes no network calls, that is a
+promise rather than an accident, and a call to a repository host would spend it.
+So what ships is the refusal to plan around an unasked target, not the asking.
+It checks that somebody wrote a dated answer down, never that the answer is
+true, and one **Checked** line satisfies every external step in the plan. It
+finds a target by the words used to reach for one, so a phrasing nobody
+anticipated is still missed. And it only reaches work that was planned in a file
+at all, which the 9 September work was not — the rule exists so that the next
+one has to be.
 
 **And the same shape one turn further on, on the list that replaced it.** The
 pull request was opened against a live repository whose contributing guide

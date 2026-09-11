@@ -43,6 +43,22 @@ The goal in one sentence a stranger could hold:
 
 - <the work, in the order it happens>
 
+**Anything outside this repository gets asked before it gets planned around.** A
+step that opens a pull request somewhere, lists on a registry, or submits to a
+directory is a step about a thing you do not control, and what that thing
+publishes about itself is not evidence it is open. A contributing guide reads
+exactly the same from a repository that was archived in August.
+
+So ask it one question only a live target can answer, and write the answer here
+with the date you got it. One line per target.
+
+- **Checked** <date> <target> <what was asked, and what it answered>
+
+Bad: "their CONTRIBUTING.md says pull requests are welcome", which is the
+description, not the thing. Better: "the API's `archived` field is false", or
+"the banner at the top of the page", or "their last merged pull request is from
+this month".
+
 ### How we will know it worked
 
 One line per claim, specific enough that it can fail. Write this now, while you

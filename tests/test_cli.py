@@ -154,6 +154,17 @@ PARTIAL_SABOTAGE = [
     ("plan", ".claude/toolkit/scripts/plan_check.py",
      "COST = [", "COST = []  # gutted\nUNUSED = [",
      "called itself mechanical"),
+    # plan_check stopped noticing a step that plans around somebody else's
+    # repository with nothing asked of it. 9 September 2026: four checks passed
+    # against an archived list, all four against what it published about itself.
+    #
+    # This one is worth the third entry precisely because the artifact keeps
+    # both other refusals. A plan_check that still catches a wishful plan and
+    # still catches an unmeasured price, and has quietly stopped catching this,
+    # is the shape real drift takes.
+    ("plan", ".claude/toolkit/scripts/plan_check.py",
+     "EXTERNAL = [", "EXTERNAL = []  # gutted\nUNUSED_EXTERNAL = [",
+     "no dated line saying anybody asked"),
 ]
 
 

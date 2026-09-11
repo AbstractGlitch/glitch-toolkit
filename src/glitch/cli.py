@@ -291,6 +291,16 @@ def check_plan(root):
         # its author, and verified by something that can come back false. Its
         # only defect is a step that states its own price.
         #
+        # It carries a **Checked** line, and that is load-bearing in two
+        # directions. Without one this plan would ALSO be refused for planning
+        # around a registry nobody asked, and a fixture with two defects cannot
+        # prove which refusal is still working -- gutting the price list would
+        # leave it rejected anyway and the sabotage would go unnoticed. That
+        # happened on 11 September 2026, during the change that added the
+        # second rule, and tests/test_cli.py caught it. It is also the positive
+        # control for the new rule: this is what a step reaching outside the
+        # repository looks like when somebody did ask.
+        #
         # 8 September 2026: a distribution plan tagged a step "mechanical, no
         # writing, no judgement". It cost two releases, neither knowable from
         # the plan. The word was an estimate wearing the clothes of a fact.
@@ -303,7 +313,9 @@ def check_plan(root):
             "- Publishing the incident writeup; that is its own decision.\n"
             "- Building a plugin wrapper for any client.\n\n"
             "### What we ARE doing\n\n"
-            "- List on the official MCP registry. Mechanical, no writing, no judgement.\n\n"
+            "- List on the official MCP registry. Mechanical, no writing, no judgement.\n"
+            "- **Checked** 2026-09-08 the registry API answered with its own server list, so\n"
+            "  it is live and accepting.\n\n"
             "### How we will know it worked\n\n"
             "- The registry API returns the server at the version named with status active.\n",
             encoding="utf-8",
@@ -318,6 +330,48 @@ def check_plan(root):
             )
         else:
             r.note("refuses a step that states a price nothing measured")
+
+        # The third refusal, and the narrowest. This plan is complete, approved
+        # by somebody other than its author, scoped, verified by something that
+        # can come back false, and states no price. Its only defect is that it
+        # plans around a repository nobody asked whether it was open.
+        #
+        # 9 September 2026: a repository was chosen as a listing target. Its
+        # contributing guide was read and quoted, its entry format derived, its
+        # categories compared, the list searched for duplicates. Four checks,
+        # four passes, all four against files from a CDN that serves them the
+        # same whether a repository is alive or archived. It had been archived
+        # on 1 August and pull requests were disabled. The banner was on the
+        # page, which nothing had opened; the state was one field in the API,
+        # which nothing had asked for.
+        #
+        # A **Checked** line with a date is what turns that from something you
+        # remember doing into something the plan can be missing.
+        unchecked = box / "unchecked.md"
+        unchecked.write_text(
+            "## Plan: get the package in front of people who use this kind of thing\n\n"
+            "**Written** 2026-09-09 by A Writer\n"
+            "**Approved** 2026-09-09 by A Reviewer\n\n"
+            "### What we are NOT doing\n\n"
+            "- Paying for placement anywhere. Not this round.\n"
+            "- Writing a plugin wrapper for any client.\n\n"
+            "### What we ARE doing\n\n"
+            "- Open a pull request against the awesome list, in their entry format.\n\n"
+            "### How we will know it worked\n\n"
+            "- The pull request exists at a URL and its state is open or merged.\n",
+            encoding="utf-8",
+        )
+        code, out = _run([sys.executable, str(script), "check", str(unchecked)], box)
+        if code == 0:
+            r.fail(
+                "plan_check.py accepted a step that opens a pull request against "
+                "somebody else's repository with no dated line saying anybody asked "
+                "whether it accepts them. A contributing guide reads exactly the "
+                "same from a repository archived in August, which is how four "
+                "separate checks passed against one."
+            )
+        else:
+            r.note("refuses a step that plans around a target nobody asked")
 
     return r
 

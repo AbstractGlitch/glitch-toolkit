@@ -39,6 +39,14 @@ WHAT THIS CANNOT DO:
   * The weak-verification list is a list of phrases, not comprehension. It
     catches the common ways a check is written so it can never fail. It will
     miss a new one.
+  * The liveness rule checks that somebody wrote a dated line, not that the
+    line is true, and not that it is about the step it is standing next to.
+    One **Checked** line satisfies every external step in the plan. It is an
+    assertion with a date on it, which is all a text file can be; if the
+    assertion is wrong the plan is wrong in a way nothing here reaches.
+  * It finds an external target by the words used to reach for one. A step that
+    names a bare URL with no verb around it, or invents a phrasing that is not
+    in the list below, is not flagged.
 
 Standard library only. Reads the file you name and writes nothing.
 """
@@ -60,6 +68,14 @@ HEADING = re.compile(r"^\s{0,3}#{1,6}\s+(.*\S)\s*$")
 BULLET = re.compile(r"^\s*[-*]\s+(.*\S)\s*$")
 WRITTEN = re.compile(r"^\s*\*\*Written\*\*\s*(.*\S)\s*$", re.I)
 APPROVED = re.compile(r"^\s*\*\*Approved\*\*\s*(.*\S)\s*$", re.I)
+# The evidence line. Plural on purpose: one per external target is the shape
+# this wants, and the count is not enforced. See EXTERNAL below.
+#
+# The leading bullet is optional because the template writes these as a list
+# under the work, and **Written** and **Approved** are written bare at the top.
+# Matched before BULLET in parse() so an evidence line never lands in the step
+# list, where it would be read as a piece of work and then complained about.
+CHECKED = re.compile(r"^\s*(?:[-*]\s+)?\*\*Checked\*\*\s*(.*\S)\s*$", re.I)
 DATE = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 # An unfilled slot from the template. Two characters minimum so a stray "<" in
@@ -126,6 +142,58 @@ COST = [
     "nothing to it",
 ]
 
+# Reaching for somebody else's surface. The third sibling of WEAK and COST, and
+# the one that is about the beginning of the work rather than the end of it.
+#
+# WEAK catches a check written so it cannot fail. COST catches a step written so
+# its price cannot come back higher than stated. This catches a step written as
+# though its target were known to exist, when nothing asked the target.
+#
+# The instance, 9 September 2026. A repository was chosen as a listing target.
+# Its CONTRIBUTING.md was read and quoted, its entry format was derived from its
+# README.md, its categories were compared and one was chosen, and the list was
+# searched for duplicates. Four checks, all of them passed, all of them made
+# against files fetched from a CDN that serves them exactly the same whether a
+# repository is alive or archived. It had been archived by its owner on 1
+# August; pull requests were disabled. The banner saying so is on the repository
+# page, which nothing had opened, and the state is one field in the API, which
+# nothing had asked for.
+#
+# Every check confirmed what the repository SAYS. None confirmed what it DOES. A
+# contributing guide describing how to open a pull request is not evidence that
+# pull requests can be opened, any more than a green test is evidence that a
+# check still refuses. It is the same substitution of the description for the
+# thing, and it survived four separate verifications because all four were of
+# the description.
+#
+# The earlier form of it, 30 July 2026: a cleanup script deleted the account it
+# had just linked. The link call succeeded. It had attached to the wrong
+# account, and a true answer to the wrong question is indistinguishable from a
+# true answer to the right one.
+#
+# So: a step that reaches for something outside this repository has to say what
+# was asked of it, and when. Not what it published about itself.
+EXTERNAL = [
+    "pull request against",
+    "pull request to",
+    "pr against",
+    "pr to",
+    "list on",
+    "listed on",
+    "listing on",
+    "submit to",
+    "submit an entry",
+    "add an entry to",
+    "add ourselves to",
+    "publish to",
+    "contribute to",
+    "register with",
+    "apply to",
+    "open an issue on",
+    "upload to",
+]
+
+
 # Softeners. Same argument as the hedge list in rules_check.py: a hedged check
 # is satisfied by whatever happened, because that was one of the times the
 # hedge covered.
@@ -152,6 +220,7 @@ class Plan:
         self.not_doing = []      # [(line_no, text)]
         self.are_doing = []
         self.checks = []
+        self.checked = []        # [(line_no, text)] the **Checked** evidence lines
         self.deviations = []     # raw lines inside the markers
         self.has_dev_block = False
 
@@ -208,6 +277,10 @@ def parse(text):
         a = APPROVED.match(line)
         if a and plan.approved is None:
             plan.approved = (line_no, a.group(1))
+            continue
+        c = CHECKED.match(line)
+        if c:
+            plan.checked.append((line_no, c.group(1)))
             continue
 
         b = BULLET.match(line)
@@ -279,6 +352,18 @@ def judge(plan):
         out.append((plan.are_doing[0][0] if plan.are_doing else 0, "What we ARE doing",
                     "nothing here that is not a placeholder."))
     else:
+        # One pass over the evidence lines, before the steps are read. A
+        # **Checked** line with no date is not evidence: it is a sentence that
+        # was true on some day nobody wrote down, and the whole complaint here
+        # is about state that changes underneath a document.
+        dated_evidence = [e for e in plan.checked if DATE.search(e[1])]
+        for line_no, text in plan.checked:
+            if not DATE.search(text):
+                out.append((line_no, "Checked",
+                            "no date in YYYY-MM-DD. Whether a repository is accepting\n"
+                            "            anything is true on a day, not in general, and an undated\n"
+                            "            answer cannot be told from a stale one."))
+
         # Cost claims in the scope section. See COST above for why.
         for line_no, text in plan.are_doing:
             if PLACEHOLDER.search(text):
@@ -291,6 +376,19 @@ def judge(plan):
                             "            makes it cheap, or drop the word: a step that turns out\n"
                             "            expensive is discovered at the far end of it."
                             .format(hit[0])))
+
+            # Reaching for somebody else's surface with nothing asked of it.
+            # See EXTERNAL above for the 9 September instance.
+            reach = [e for e in EXTERNAL if e in low]
+            if reach and not dated_evidence:
+                out.append((line_no, text,
+                            "'{}' reaches for something outside this repository and no\n"
+                            "            **Checked** line says it was asked whether it is open. Ask\n"
+                            "            it one question only a live target can answer, and write\n"
+                            "            the answer down with a date. What it publishes about\n"
+                            "            itself is not that: a contributing guide reads the same\n"
+                            "            from an archived repository."
+                            .format(reach[0])))
 
     # 4. Verification. The reason this file is checked at all: these are written
     #    before the work, while you still want them to be hard.
