@@ -1,0 +1,269 @@
+name: release
+
+# Publish to PyPI from CI, so that the artefact which was tested is the artefact
+# that ships.
+#
+# This file lives at glitch/.github/ inside the private monorepo, which is not a
+# repository root, so GitHub ignores it there. It runs on the public mirror,
+# where it lands at .github/workflows/release.yml. Same arrangement as tests.yml
+# and for the same reason.
+#
+# WHY THIS EXISTS. RELEASING.md has said since 0.1.1 that the real fix is to
+# publish from CI. Two things on 2026-09-11 turned that from a preference into an
+# argument.
+#
+# The artefact that was checked was never the artefact that shipped. A build was
+# made and verified in one place, a different build was made on another machine,
+# and the second one went to PyPI. Both were fine; nobody could have said so from
+# the evidence, because the thing tested and the thing uploaded were two files
+# that merely came from the same source. Builds are not reproducible here -- two
+# runs of `python -m build` minutes apart on one machine produce four different
+# hashes, since wheels and sdists stamp their entries with a time -- so "rebuild
+# and compare" cannot close that gap. Building once and publishing that exact
+# file can.
+#
+# And release state written by hand went stale twice in one day. RELEASING.md
+# claimed 0.1.3 was unreleased for three days, was corrected, and then claimed
+# the same of 0.1.4 within hours. A correction is not a mechanism. A run that
+# uploads is the only thing that can truthfully say a version is published.
+#
+# WHAT THE OWNER HAS TO DO ONCE, in a browser, before this can work. On
+# pypi.org: the project, then Settings, then Publishing, then add a trusted
+# publisher with owner `AbstractGlitch`, repository `glitch-toolkit`, workflow
+# `release.yml`, environment `pypi`. All four have to match this file exactly or
+# the token exchange is refused. Then create a `pypi` environment on the mirror
+# with required reviewers, so a human still approves each publish.
+#
+# WHY AN ENVIRONMENT AND NOT JUST A DISPATCH. Trusted publishing grants the
+# right to upload to any run of this workflow in that repository. The
+# environment is what puts a human back in front of it, and it is the reason
+# `id-token: write` appears on one job rather than at the top of the file.
+#
+# WHAT THIS DOES NOT DO. It does not push the mirror -- the code has to be there
+# already, which means `git subtree push` comes first now, not third. It does not
+# publish the MCP registry entry. It does not tag: tags in the monorepo do not
+# travel through a subtree push, which is why this is dispatched by hand rather
+# than triggered by one.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "The version you expect to publish, e.g. 0.1.5. Refused if the tree disagrees."
+        required: true
+        type: string
+
+# Nothing here reads or writes the repository. The one job that needs a token
+# asks for it itself, below.
+permissions: {}
+
+concurrency:
+  # Never two publishes of one repository at once.
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    # Builds ONCE. Everything downstream uses this artefact and nothing rebuilds,
+    # which is the whole point of the file.
+    name: build the artefact that will ship
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: The tree must agree with what you dispatched
+        # You say what you think you are publishing; this refuses if the tree
+        # says otherwise. It is the same idea as the **Checked** line the plan
+        # checker wants: state the claim, then let something contradict it.
+        env:
+          WANTED: ${{ inputs.version }}
+        run: |
+          python - <<'PY'
+          import json, os, pathlib, re
+          wanted = os.environ["WANTED"].strip()
+          proj = pathlib.Path("pyproject.toml").read_text(encoding="utf-8")
+          init = pathlib.Path("src/glitch/__init__.py").read_text(encoding="utf-8")
+          entry = json.loads(pathlib.Path("registry/server.json").read_text(encoding="utf-8"))
+          readme = pathlib.Path("README.md").read_text(encoding="utf-8")
+
+          seen = {
+              "pyproject.toml": re.search(r'^version\s*=\s*"([^"]+)"', proj, re.M).group(1),
+              "src/glitch/__init__.py": re.search(r'^__version__\s*=\s*"([^"]+)"', init, re.M).group(1),
+              "registry/server.json": entry["version"],
+          }
+          for i, pkg in enumerate(entry.get("packages", [])):
+              seen["registry/server.json packages[%d]" % i] = pkg.get("version")
+
+          problems = [f"{k} says {v}" for k, v in seen.items() if v != wanted]
+          if problems:
+              print("::error::you dispatched {} but {}".format(wanted, "; ".join(problems)))
+              raise SystemExit(1)
+
+          marker = "mcp-name: " + entry["name"]
+          if marker not in readme:
+              print("::error::README.md carries no '{}' marker, so the registry cannot verify the namespace".format(marker))
+              raise SystemExit(1)
+          print("the tree, the registry entry and the README marker all say " + wanted)
+          PY
+
+      - name: Refuse a version that is already on the index
+        # A version cannot be re-uploaded. Catching it here costs a second;
+        # catching it at the upload step costs a confusing 400 after the tests
+        # have run.
+        env:
+          WANTED: ${{ inputs.version }}
+        run: |
+          python - <<'PY'
+          import json, os, urllib.request
+          wanted = os.environ["WANTED"].strip()
+          with urllib.request.urlopen("https://pypi.org/pypi/glitch-toolkit/json", timeout=30) as r:
+              data = json.load(r)
+          released = sorted(data.get("releases", {}))
+          if wanted in released:
+              print("::error::glitch-toolkit {} is already on the index. Released: {}".format(
+                  wanted, ", ".join(released)))
+              raise SystemExit(1)
+          print("{} is not on the index. Latest is {}".format(wanted, data["info"]["version"]))
+          PY
+
+      - name: Build both distributions, once
+        run: |
+          python -m pip install --upgrade pip build
+          python -m build
+
+      - name: Record what was built
+        # The digests of the exact files that will be uploaded, in the log,
+        # before anything else touches them. RELEASING.md's artefacts block was
+        # wrong for a day because it recorded a build that was never uploaded.
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib
+          for f in sorted(pathlib.Path("dist").iterdir()):
+              print("{}  {} bytes  sha256 {}".format(
+                  f.name, f.stat().st_size, hashlib.sha256(f.read_bytes()).hexdigest()))
+          PY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  verify:
+    # Every check RELEASING.md asks for before an upload, run against the built
+    # artefact rather than against the source tree. tests.yml already covers the
+    # source on five platform and version combinations; this covers the file.
+    name: verify the built artefact
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: twine check
+        run: |
+          python -m pip install --upgrade pip twine
+          python -m twine check dist/*
+
+      - name: Install the built wheel with the MCP extra, and nothing from source
+        # `pip install '.[mcp]'` would test the checkout. This installs the
+        # artefact, so the suites run against what a stranger downloads.
+        run: |
+          python -m pip install "$(echo dist/*.whl)[mcp]"
+
+      - name: Run every suite against it, and refuse a skip
+        # run_all.py exits `1 if failed else 0`, so a SKIPPED suite leaves the
+        # exit code at 0. Without the grep this job goes green with ten tests
+        # unrun, which is the false green this package exists to catch.
+        run: |
+          set -o pipefail
+          python tests/run_all.py | tee suites.txt
+          if grep -q "SKIPPED" suites.txt; then
+            echo "::error::a suite was SKIPPED; run_all.py still exits 0, so this job would otherwise be green with tests unrun"
+            exit 1
+          fi
+          if ! grep -q "test_mcp_server.py *ok" suites.txt; then
+            echo "::error::the server suite did not report ok, so the [mcp] extra is not doing what this job assumes"
+            exit 1
+          fi
+
+      - name: The wheel must carry the marker in its BUILT metadata
+        # Not in README.md, which is checked above. In the metadata baked into
+        # the distribution, which is what PyPI renders and what the registry
+        # reads. 0.1.1 shipped without it and 0.1.2 shipped it miscased; each
+        # cost a release, because a version cannot be re-uploaded.
+        run: |
+          python - <<'PY'
+          import glob, json, pathlib, zipfile
+          name = json.loads(pathlib.Path("registry/server.json").read_text(encoding="utf-8"))["name"]
+          whl = glob.glob("dist/*.whl")[0]
+          z = zipfile.ZipFile(whl)
+          meta = [n for n in z.namelist() if n.endswith(".dist-info/METADATA")][0]
+          text = z.read(meta).decode("utf-8")
+          if ("mcp-name: " + name) not in text:
+              print("::error::the built wheel's METADATA carries no 'mcp-name: {}'".format(name))
+              raise SystemExit(1)
+          for bad in ("Private :: Do Not Upload",):
+              if bad in text:
+                  print("::error::the wheel still carries the {!r} classifier".format(bad))
+                  raise SystemExit(1)
+          if "License-Expression: Apache-2.0" not in text:
+              print("::error::the wheel does not declare License-Expression: Apache-2.0")
+              raise SystemExit(1)
+          print("the built wheel carries the marker, the licence, and no do-not-upload classifier")
+          PY
+
+      - name: The sdist must carry its own test runner
+        run: |
+          python - <<'PY'
+          import glob, tarfile
+          sdist = glob.glob("dist/*.tar.gz")[0]
+          names = tarfile.open(sdist).getnames()
+          missing = [w for w in ("tests/run_all.py", "LICENSE", "NOTICE")
+                     if not any(n.endswith("/" + w) for n in names)]
+          if missing:
+              print("::error::sdist is missing: " + ", ".join(missing))
+              raise SystemExit(1)
+          print("sdist carries the test runner, LICENSE and NOTICE")
+          PY
+
+  publish:
+    # The only job that can upload, and the only one that asks for a token.
+    #
+    # `environment: pypi` is the human gate. Configure it on the mirror with
+    # required reviewers: trusted publishing grants upload rights to any run of
+    # this workflow, and this is what puts a person in front of that.
+    name: publish to PyPI
+    needs: verify
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/glitch-toolkit/${{ inputs.version }}/
+    permissions:
+      # The OIDC token PyPI exchanges for a short-lived upload credential. No
+      # API token anywhere, which is the security half of the reason for this
+      # file: there is nothing on anybody's laptop left to leak.
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - name: Upload
+        # Pinned to the action's documented stable branch rather than to a
+        # commit SHA. The machine this file was written on could not reach that
+        # repository to resolve one, and an unverified SHA copied from memory
+        # would be worse than an honest branch pin. Pinning it is a real
+        # improvement and is left as a deliberate decision for whoever can check
+        # the value: this job holds id-token: write.
+        uses: pypa/gh-action-pypi-publish@release/v1

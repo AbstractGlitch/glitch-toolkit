@@ -342,10 +342,12 @@ def main():
     directory = find_dist(pkg, args.dist)
     artefacts = check_artefacts(pkg, directory, version, r) if version else []
 
+    # Still required: it is the documented fallback if the workflow is down, and
+    # `twine check` is worth having locally before a dispatch.
     check_tool("twine", r)
     has_publisher = check_tool(
         "mcp-publisher", r, extra_dirs=(pkg / "registry",), required=False,
-        needed_for="it is only needed for step 4, the registry entry, so steps 1 to 3 can\n           go ahead without it. See registry/LISTINGS.md")
+        needed_for="it is only needed for the registry entry, which is the last step, so\n           everything before it can go ahead without it. See registry/LISTINGS.md")
 
     if version and not args.no_index:
         check_index(version, r)
@@ -372,32 +374,41 @@ def main():
     else:
         print("Ready. Nothing below has been done for you; run them in this order.\n")
     dist_dir = artefacts[0].parent if artefacts else (pkg / "dist")
-    print("  1. Upload. From the machine holding the token in $HOME/.pypirc:")
-    print("       cd {}".format(dist_dir))
-    print("       twine check *")
-    print("       twine upload *")
-    print("")
-    print("  2. STOP. Open https://pypi.org/project/{}/ and confirm the".format(DIST))
-    print("     mcp-name marker rendered in the description, with that exact capitalisation.")
-    print("     The registry reads that page, not the file. 0.1.2 skipped this and cost a release.")
-    print("")
-    print("  3. Publish the mirror:")
+    print("  1. Push the mirror. This is FIRST now, not third: the release workflow")
+    print("     runs on the mirror and cannot run on code that is not there yet.")
     print("       cd {}".format(root))
     print("       git subtree push --prefix=glitch https://github.com/AbstractGlitch/glitch-toolkit.git main")
     print("")
-    print("  4. The registry entry. The login token expires quickly, so run both without a gap:")
+    print("  2. On the mirror: Actions, release, Run workflow, and type {}.".format(version))
+    print("     It builds ONCE, runs every suite and metadata check against that built")
+    print("     wheel, and uploads the file it tested. Nothing is built twice.")
+    print("     Needs a trusted publisher on PyPI and a 'pypi' environment on the")
+    print("     mirror; RELEASING.md has the one-time setup.")
+    print("")
+    print("  3. Approve the pypi environment when the run asks.")
+    print("")
+    print("  4. Confirm the marker rendered at https://pypi.org/project/{}/".format(DIST))
+    print("     The workflow asserts it in the built metadata, but the registry reads the")
+    print("     rendered page, so look. 0.1.2 skipped this and cost a release.")
+    print("")
+    print("  5. The registry entry. The login token expires quickly, so run both without a gap:")
     if not has_publisher:
-        print("     ** BLOCKED: mcp-publisher is not installed. Steps 1 to 3 do not need it.")
-        print("        Without this step PyPI carries {} and the registry still names the".format(version))
+        print("     ** BLOCKED: mcp-publisher is not installed. Nothing before this needs it.")
+        print("        Without it PyPI carries {} and the registry still names the".format(version))
         print("        previous version, which is stale rather than broken. See registry/LISTINGS.md.")
     print("       cd {}".format(pkg / "registry"))
     print("       mcp-publisher login github")
     print("       mcp-publisher publish")
     print("")
-    print("  5. Then prove what a stranger does, from a clean virtualenv:")
+    print("  6. Then prove what a stranger does, from a clean virtualenv:")
     print("       pip install {}".format(DIST))
     print("       glitch install")
     print("       glitch status")
+    print("")
+    print("  Uploading by hand from this machine is the old way and RELEASING.md says why")
+    print("  it stopped: the artefact you test is not the artefact you upload. If you must,")
+    print("  the artefacts are in {} and twine is {}.".format(
+        dist_dir, "installed" if shutil.which("twine") else "NOT installed"))
     print("")
     return 0
 

@@ -200,6 +200,79 @@ preparing the release. It was verified there and **never uploaded**. Its hashes 
 obtain: worse than no hash, because a future comparison against them would refuse a legitimate file
 and an audit of what shipped would be misled.
 
+## Publishing from CI, which is where this should happen from 0.1.5
+
+Added 2026-09-11, after 0.1.4 shipped, because that release produced the two
+arguments this file had been making abstractly since 0.1.1.
+
+**The artefact that was checked was never the artefact that shipped.** One build was made and
+verified in a container; a second was made on the owner's machine; the second went to PyPI. Both
+were fine and nobody could have said so from the evidence. Rebuilding and comparing cannot close
+that: two runs of `python -m build` minutes apart on one machine produce four different hashes,
+because wheels and sdists stamp their entries with a time. Building once and uploading that exact
+file can.
+
+**Release state written by hand went stale twice in a day** — 0.1.3 for three days, then 0.1.4
+within hours of the correction. A run that uploads is the only thing that can truthfully say a
+version is published.
+
+`.github/workflows/release.yml` does it: dispatch it by hand with the version you expect, and it
+refuses if the tree disagrees or if that version is already on the index, builds **once**, runs
+every suite and every metadata check against that built wheel rather than against the source, then
+waits for a human to approve the `pypi` environment before uploading the file it tested.
+
+### The one-time setup, in a browser, before the first dispatch
+
+Neither of these can be done from a session, and until both exist the workflow will fail at the
+upload step:
+
+1. **On PyPI**: the project, Settings, Publishing, add a trusted publisher — owner
+   `AbstractGlitch`, repository `glitch-toolkit`, workflow `release.yml`, environment `pypi`. All
+   four must match the workflow exactly or the token exchange is refused.
+2. **On the mirror**: create an environment named `pypi` with required reviewers. Trusted publishing
+   grants upload rights to any run of that workflow in that repository; the environment is what puts
+   a person back in front of it.
+
+Once a publish has worked this way, **delete the API token on PyPI**. Its whole purpose was to live
+on a laptop, and the point of the change is that nothing has to.
+
+### The order changes, and this is the part to actually read
+
+The mirror push moves from third to **first**. CI cannot run on code that is not there yet.
+
+1. `python glitch/release_preflight.py` from the repository root. Everything it checks still applies.
+2. `git subtree push --prefix=glitch https://github.com/AbstractGlitch/glitch-toolkit.git main`
+3. On the mirror, Actions, **release**, Run workflow, and type the version. It refuses a version the
+   tree does not carry and one the index already has, so at a tree that has not been bumped it will
+   refuse both the current version and the next one, which is correct.
+4. Approve the `pypi` environment when it asks.
+5. Confirm the marker rendered at <https://pypi.org/project/glitch-toolkit/>. Still worth doing by
+   eye even though the workflow asserts it in the built metadata, because what the registry reads is
+   the rendered page.
+6. `mcp-publisher login github` then `mcp-publisher publish`, from `glitch/registry/`.
+7. From a clean virtualenv: `pip install glitch-toolkit`, `glitch install`, `glitch status`.
+
+### What was verified about this workflow, and what was not
+
+**Not run.** No GitHub Actions runner was available, so the workflow itself has never executed. That
+is stated rather than glossed: the first dispatch is the first time it runs, and it may fail on
+something only a runner shows.
+
+**Every inline Python block in it was extracted and executed** against this tree on 2026-09-11, with
+its refusals watched to fail: the version-agreement check passes at the tree's own version and
+refuses both a higher and a lower one; the index check refuses a released version and accepts an
+unreleased one; the built-wheel metadata check passes on the real wheel and refuses a wheel whose
+marker has been miscased; the sdist check passes and refuses one with `tests/run_all.py` removed.
+Eight green, two sabotage cases caught. The YAML parses and the permissions are as intended:
+`{}` at the top, `id-token: write` on the publish job alone.
+
+**The publish action is pinned to `release/v1`, not to a commit SHA.** The machine this was written
+on could not reach that repository to resolve one, and an unverified SHA would be worse than an
+honest branch pin. Pinning it is a real improvement and is left as a deliberate decision for
+somebody who can check the value, because that job holds `id-token: write`.
+
+---
+
 ### Yours, in this order
 
 **Run the preflight first. It exists because the block that used to be here failed.**
