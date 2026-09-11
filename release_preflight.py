@@ -165,7 +165,62 @@ def find_dist(pkg, given):
     return d if d.is_dir() else None
 
 
-def check_artefacts(directory, version, r):
+def recorded_hashes(pkg, version):
+    """The hashes RELEASING.md wrote down for this version, or None.
+
+    The file records them as:  - `name` -- N bytes, sha256 `hex`
+    under a '### The artefacts' heading, written from an actual build. Parsing
+    them here means the artefacts are compared against something in the
+    repository rather than against a number somebody reads off the screen and
+    eyeballs, which is the whole difference between a check and a habit.
+
+    Returns None when the block is missing or names a different version. That is
+    deliberately not the same answer as "they match": a release whose artefacts
+    nobody recorded is a release nobody checked, and the caller reports it as
+    unknown rather than passing it.
+    """
+    path = pkg / "RELEASING.md"
+    if not path.is_file():
+        return None
+    text = path.read_text(encoding="utf-8", errors="replace")
+    found = {}
+    for m in re.finditer(
+        r"^-\s+`([^`]+)`\s+[^`\n]*?sha256\s+`([0-9a-f]{64})`\s*$", text, re.M
+    ):
+        name, digest = m.group(1), m.group(2)
+        if version in name:
+            found[name] = digest
+    return found or None
+
+
+def describe(directory):
+    """What is in a directory, without reciting it.
+
+    The first version of this printed every filename so the reader was not left
+    guessing. Against glitch/dist/ that is two lines. Run against a real
+    downloads folder on 2026-09-11 it was seventy-odd names, printed four times,
+    and it put the names of unrelated personal files into a terminal and from
+    there into a transcript. Unreadable, and a diagnostic that recites its
+    surroundings is worse than one that says less.
+
+    So: only files that look like this distribution, at most five, and a count
+    for the rest. Nothing else is named.
+    """
+    try:
+        files = [p.name for p in directory.iterdir() if p.is_file()]
+    except OSError as error:
+        return "could not be read ({})".format(type(error).__name__)
+    if not files:
+        return "it is empty"
+    ours = sorted(f for f in files if f.startswith(DIST.replace("-", "_")))
+    if not ours:
+        return "it holds {} file(s), none of them a {} build".format(len(files), DIST)
+    shown = ours[:5]
+    tail = "" if len(ours) <= 5 else ", and {} more".format(len(ours) - 5)
+    return "it holds: {}{}".format(", ".join(shown), tail)
+
+
+def check_artefacts(pkg, directory, version, r):
     if directory is None:
         r.fail("no artefacts directory. Build with 'python -m build', or pass --dist <path> "
                "if you downloaded them somewhere else")
@@ -173,18 +228,38 @@ def check_artefacts(directory, version, r):
 
     wheel = "{}-{}-py3-none-any.whl".format(DIST.replace("-", "_"), version)
     sdist = "{}-{}.tar.gz".format(DIST.replace("-", "_"), version)
+
+    # Computed once, not once per missing artefact.
+    inventory = describe(directory)
+    expected = recorded_hashes(pkg, version)
+
     out = []
     for name in (wheel, sdist):
         path = directory / name
         if not path.is_file():
-            # Say what IS there. "Cannot find file" with no inventory is what
-            # made the original failure take a second round trip.
-            others = sorted(p.name for p in directory.iterdir() if p.is_file())
-            r.fail("{} is not in {}. That directory holds: {}".format(
-                name, directory, ", ".join(others) if others else "nothing"))
+            r.fail("{} is not in {} -- {}".format(name, directory, inventory))
             continue
         digest = hashlib.sha256(path.read_bytes()).hexdigest()
-        r.ok("{}  sha256 {}".format(name, digest))
+        if expected is None:
+            r.unsure("{} is here, but RELEASING.md records no sha256 for {}, so there is "
+                     "nothing to compare it with".format(name, version))
+        elif name not in expected:
+            r.unsure("{} is here, but RELEASING.md records no sha256 for this file".format(name))
+        elif expected[name] == digest:
+            r.ok("{} matches the build RELEASING.md recorded".format(name))
+        else:
+            # Not a failure. A local 'python -m build' on another machine
+            # legitimately differs: setuptools writes generated metadata in the
+            # platform's line endings and gzip stamps the tarball with a time.
+            # So this means "not the build that was checked", which the reader
+            # has to decide about, rather than "corrupt", which they do not.
+            r.unsure("{} is NOT the build RELEASING.md recorded.\n"
+                     "           recorded {}\n"
+                     "           this one {}\n"
+                     "           A build you made yourself will differ, which is fine if you ran\n"
+                     "           'twine check' and the test suite against it. A download should\n"
+                     "           match; if it does not, fetch it again."
+                     .format(name, expected[name], digest))
         out.append(path)
     return out
 
@@ -252,7 +327,7 @@ def main():
 
     version = check_versions(pkg, r)
     directory = find_dist(pkg, args.dist)
-    artefacts = check_artefacts(directory, version, r) if version else []
+    artefacts = check_artefacts(pkg, directory, version, r) if version else []
 
     check_tool("twine", r)
     has_publisher = check_tool("mcp-publisher", r, extra_dirs=(pkg / "registry",))
@@ -268,13 +343,19 @@ def main():
         print("\nNothing was uploaded, pushed or published. Fix the above and run this again.")
         return 1
 
+    # Unknown is not ready. The steps still print, because the reader may have a
+    # good answer -- they built the artefacts themselves, or the index was
+    # unreachable -- but the word "Ready" is reserved for a run where nothing
+    # was left open. A green verdict over an unchecked thing is the failure this
+    # whole package is about, and it would be absurd to ship it here.
     if r.unknown:
-        print("{} thing(s) could not be checked from here:".format(len(r.unknown)))
+        print("{} thing(s) could not be checked, so this is NOT a clean run:".format(len(r.unknown)))
         for u in r.unknown:
             print("  - " + u)
         print("")
-
-    print("Ready. Nothing below has been done for you; run them in this order.\n")
+        print("Read each one and decide. The steps are below; nothing has been done for you.\n")
+    else:
+        print("Ready. Nothing below has been done for you; run them in this order.\n")
     dist_dir = artefacts[0].parent if artefacts else (pkg / "dist")
     print("  1. Upload. From the machine holding the token in $HOME/.pypirc:")
     print("       cd {}".format(dist_dir))
