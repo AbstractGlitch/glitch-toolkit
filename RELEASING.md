@@ -136,33 +136,57 @@ they were.**
 
 ### Yours, in this order
 
-```powershell
-# 1. Upload. From the machine with the token in $HOME\.pypirc.
-twine upload dist/*
+**Run the preflight first. It exists because the block that used to be here failed.**
 
-# 2. BEFORE the registry step, open the project page and confirm the marker
-#    rendered in the description. The registry reads that page, not the file.
-#    https://pypi.org/project/glitch-toolkit/
-
-# 3. Publish the mirror. This session cannot: glitch-toolkit is outside its scope.
-git subtree push --prefix=glitch https://github.com/AbstractGlitch/glitch-toolkit.git main
-
-# 4. The registry entry.
-mcp-publisher publish
-
-# 5. Prove what a stranger actually does, from a clean virtualenv.
-pip install glitch-toolkit
-glitch install
-glitch status
+```
+cd <your AbstractGlitch clone>
+python glitch/release_preflight.py
 ```
 
-If `twine upload` rejects the token, generate another rather than reaching for an account-scoped
-one to get unstuck. Nothing verifies a PyPI token except an upload, so the current one has been
-untested since 0.1.3.
+The `cd` is not decoration and this file already got it wrong once today: the first draft of this
+paragraph said "from anywhere inside your clone", which is true of the preflight's own checks and
+false of the path you type to reach it. The script finds the repository root itself, so the working
+directory does not matter to what it checks — only to whether the shell can find the file. From
+inside `glitch/` it is `python release_preflight.py` instead.
 
-**After the upload, two files carry a number that will be wrong.** `CLAUDE.md` says 0.1.4 is
-prepared and not uploaded; the line above says the same. Both should be read off the index, not
-off memory, which is the whole reason the top of this file needed correcting today.
+Add `--dist <path>` if the artefacts are somewhere other than `glitch/dist/` — a downloads folder,
+for instance. It checks where you are standing, that
+all four version numbers and the `mcp-name` marker agree, that the artefacts are present and are the
+version the tree says, that `twine` and `mcp-publisher` are actually installed, and that the version
+is not already on the index. Then it prints these same steps with every path resolved to an absolute
+one. **It uploads nothing and pushes nothing**; publishing stays a deliberate act.
+
+The steps it prints, in summary, so this file still says them:
+
+1. `twine check *` then `twine upload *`, from the directory holding the artefacts, on the machine
+   with the token in `$HOME/.pypirc`.
+2. **Stop.** Open <https://pypi.org/project/glitch-toolkit/> and confirm the `mcp-name` marker
+   rendered in the description with that exact capitalisation. The registry reads that page rather
+   than the file, and 0.1.2 skipped this.
+3. `git subtree push --prefix=glitch https://github.com/AbstractGlitch/glitch-toolkit.git main`,
+   from the repository root.
+4. `mcp-publisher login github` then `mcp-publisher publish`, from `glitch/registry/`, with no gap
+   between them because the login token expires quickly.
+5. From a clean virtualenv: `pip install glitch-toolkit`, `glitch install`, `glitch status`.
+
+**What was here before, and what it cost.** Until 2026-09-11 this section was five bare commands
+with no directories:
+
+```
+twine upload dist/*
+git subtree push --prefix=glitch <url> main
+mcp-publisher publish
+```
+
+Run from a fresh PowerShell prompt, which opens in `C:\WINDOWS\System32`, all three failed:
+`Cannot find file (or expand pattern): 'dist/*'`, `fatal: not a git repository`, and
+`The term 'mcp-publisher' is not recognized`. Every one of them is a true answer to the question
+actually asked and a useless answer to the question meant, which is this repository's whole subject.
+
+The commands were not wrong. They carried their working directory in the reader's head, and that
+worked for three releases because the same person ran them from the same folder each time. A habit
+is not a guarantee, and the first time this was written down for somebody else it broke on the first
+line. The preflight is the habit written out.
 
 ## 0.1.4 — what is in it
 
