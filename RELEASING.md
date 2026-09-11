@@ -1,6 +1,20 @@
 # Releasing
 
-**0.1.4 is prepared and NOT released.** What is in it is below.
+**0.1.4 was released on 2026-09-11 at 12:11 UTC.** Read from the index, not from this file:
+`glitch-toolkit` latest is 0.1.4, five releases, `>=3.9`, Apache-2.0. What is in it is below.
+
+**This line said "0.1.4 is prepared and NOT released" until the upload, and that is the second time
+in one day this file has been wrong about release state in exactly that way.** The first was about
+0.1.3, corrected this morning, with a sentence added saying the version had been determined by
+asking the index and that the next one should be too. Hours later the sentence about the next one was
+false.
+
+**A correction is not a mechanism.** What got fixed in the morning was one sentence. What produced it
+— release state written into prose by hand, with nothing able to contradict it — was not touched, so
+it produced the same defect at the first opportunity. Anybody reading this before an upload should
+assume the line above is stale and check the index, which `release_preflight.py` now does on every
+run. The durable answer is further down: publish from CI, and let the run that uploads be the thing
+that writes this.
 
 **0.1.3 was released on 2026-09-08**, and the line that stood here until
 2026-09-11 said it was not. It read, in bold, at the top of the release
@@ -87,11 +101,24 @@ before it.
 
 ## 0.1.4 — the handover, and what was already verified
 
-Prepared on 2026-09-11 in a Linux container that deliberately holds no PyPI token. Everything below
-the line was done and its result is stated; everything above it is the owner's, because the token
-lives in `$HOME/.pypirc` on their machine and the mirror is outside this session's repository
-scope. **None of the owner steps have been performed. Do not read this section as a record that
-they were.**
+Prepared on 2026-09-11 in a Linux container that deliberately holds no PyPI token.
+
+**Steps 1 and 2 are now done.** The owner rebuilt on their own machine, ran all three suites against
+that build (40 passed, 0 failed, none skipped, with the `[mcp]` extra installed), `twine check`
+passed both files, and the upload went through at 12:11 UTC. Step 2 was then verified against the
+live project page rather than eyeballed: the description carries
+`mcp-name: io.github.AbstractGlitch/glitch-toolkit` with exact capitalisation, exactly one such
+line, so the registry will accept it. That is the step 0.1.2 skipped.
+
+**Step 5 is done too**, from the real index in a clean virtualenv: `pip install glitch-toolkit`
+resolves 0.1.4, adds exactly one distribution and no dependencies, and `glitch check plan` from the
+published wheel refuses a plan whose step opens a pull request against a list with no dated
+`**Checked**` line, then passes the same plan once the line is added. The headline change of this
+release, proved from what a stranger downloads rather than from the source tree.
+
+**Steps 3 and 4 have NOT been performed.** The mirror push and the registry entry are still
+outstanding, for reasons named beside them below. Do not read this section as a record that they
+were done.
 
 ### Already done and verified here
 
@@ -157,8 +184,21 @@ the same source.
 
 ### The artefacts
 
-- `glitch_toolkit-0.1.4-py3-none-any.whl` — 80166 bytes, sha256 `737652f56dc59beb327662b73ceab2f5e05f942a0066decec4d8badaece72c8a`
-- `glitch_toolkit-0.1.4.tar.gz` — 94598 bytes, sha256 `a57e301295e502ede39820fbca5ba754a2e4e51c318e07c2ebb555a267dc4684`
+**What shipped**, read back from PyPI's own digests on 2026-09-11, not from the terminal that
+uploaded it:
+
+- `glitch_toolkit-0.1.4-py3-none-any.whl` — 80233 bytes, sha256 `8739c0bbe959d2a253e7a8659ae3661c9a272983c7bc70aeccec4bc36f30a47b`
+- `glitch_toolkit-0.1.4.tar.gz` — 95175 bytes, sha256 `adddacc8de6a15f78a2237b5f48079cbfb43ffbb00c92db424b01f9db52b2021`
+
+That is a **Windows** build, so the three generated files carry CRLF (`PKG-INFO`, `setup.cfg`, the
+egg-info `PKG-INFO`), as in 0.1.1 through 0.1.3. Nothing breaks; the entry above on reproducibility
+says why it is still worth removing, and how.
+
+**Retired, and named so nobody compares against it.** This block previously held
+`737652f5…` (80166 bytes) and `a57e3012…` (94598 bytes), a Linux build made in a container while
+preparing the release. It was verified there and **never uploaded**. Its hashes are bytes nobody can
+obtain: worse than no hash, because a future comparison against them would refuse a legitimate file
+and an audit of what shipped would be misled.
 
 ### Yours, in this order
 
