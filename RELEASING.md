@@ -129,6 +129,32 @@ they were.**
   "price" inside the cost-claim rule. `CORPUS.md` naming `client-acquisition-saas` and the rest is
   a decision the owner confirmed on 2026-09-08 and is not to be undone.
 
+### Two builds of one commit produce four different hashes
+
+Observed 2026-09-11 on the owner's machine. They ran `python -m build` twice, minutes apart, from
+the same commit, and the preflight reported:
+
+| build | wheel | sdist |
+|---|---|---|
+| first  | `e57c132c…` | `f7554997…` |
+| second | `8739c0bb…` | `adddacc8…` |
+
+Both a wheel and an sdist are archives that stamp their entries with a time, so every build differs.
+Nothing is wrong; it is what setuptools does without `SOURCE_DATE_EPOCH`.
+
+**What it means for the hashes recorded below.** They identify one specific build and nothing more.
+A match proves the file is that build. A mismatch proves only that it is a different build, which is
+the normal case for anybody who ran `python -m build` themselves. That is why the preflight reports a
+mismatch as unknown and leaves the decision to the reader, rather than refusing: a check that refused
+here would fire on every healthy local build and would be ignored within a week.
+
+**And it sharpens the case for publishing from CI**, which this file already calls the real fix. The
+earlier argument was about platform: the CRLF guard runs on Linux while releases are uploaded from
+Windows. The sharper argument is that *the artefact that was checked is never the artefact that is
+uploaded*, on any platform, unless one build does both. Running the tests, then building, then
+uploading means the thing tested and the thing shipped are two different files that merely came from
+the same source.
+
 ### The artefacts
 
 - `glitch_toolkit-0.1.4-py3-none-any.whl` — 80166 bytes, sha256 `737652f56dc59beb327662b73ceab2f5e05f942a0066decec4d8badaece72c8a`

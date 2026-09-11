@@ -264,8 +264,17 @@ def check_artefacts(pkg, directory, version, r):
     return out
 
 
-def check_tool(name, r, extra_dirs=()):
-    """On PATH, or beside the thing that needs it."""
+def check_tool(name, r, extra_dirs=(), required=True, needed_for=""):
+    """On PATH, or beside the thing that needs it.
+
+    `required` is the whole point of this signature, and it was added after the
+    first version blocked a release on a tool the release did not yet need.
+    twine is required: step 1 cannot happen without it. mcp-publisher is step 4,
+    after the upload and after the mirror push, so its absence is reported every
+    time and holds nothing back. A check that fires on a healthy tree is as
+    broken as one that never fires, and refusing the whole run over a tool
+    needed at the last step is that.
+    """
     where = shutil.which(name)
     if where:
         r.ok("{} found at {}".format(name, where))
@@ -275,7 +284,11 @@ def check_tool(name, r, extra_dirs=()):
             if candidate.is_file():
                 r.ok("{} found at {} (not on PATH, so run it by full path)".format(name, candidate))
                 return True
-    r.fail("{} is not on PATH and is not beside the tree".format(name))
+    said = "{} is not on PATH and is not beside the tree".format(name)
+    if required:
+        r.fail(said)
+    else:
+        r.unsure(said + ("; " + needed_for if needed_for else ""))
     return False
 
 
@@ -330,7 +343,9 @@ def main():
     artefacts = check_artefacts(pkg, directory, version, r) if version else []
 
     check_tool("twine", r)
-    has_publisher = check_tool("mcp-publisher", r, extra_dirs=(pkg / "registry",))
+    has_publisher = check_tool(
+        "mcp-publisher", r, extra_dirs=(pkg / "registry",), required=False,
+        needed_for="it is only needed for step 4, the registry entry, so steps 1 to 3 can\n           go ahead without it. See registry/LISTINGS.md")
 
     if version and not args.no_index:
         check_index(version, r)
@@ -371,9 +386,11 @@ def main():
     print("       git subtree push --prefix=glitch https://github.com/AbstractGlitch/glitch-toolkit.git main")
     print("")
     print("  4. The registry entry. The login token expires quickly, so run both without a gap:")
-    print("       cd {}".format(pkg / "registry"))
     if not has_publisher:
-        print("       (mcp-publisher is not installed here -- see registry/LISTINGS.md)")
+        print("     ** BLOCKED: mcp-publisher is not installed. Steps 1 to 3 do not need it.")
+        print("        Without this step PyPI carries {} and the registry still names the".format(version))
+        print("        previous version, which is stale rather than broken. See registry/LISTINGS.md.")
+    print("       cd {}".format(pkg / "registry"))
     print("       mcp-publisher login github")
     print("       mcp-publisher publish")
     print("")
