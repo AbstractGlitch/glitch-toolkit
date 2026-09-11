@@ -3,7 +3,7 @@
   "name": "io.github.AbstractGlitch/glitch-toolkit",
   "title": "Glitch Toolkit",
   "description": "Read-only checks that fail a guardrail which is present but has stopped refusing anything",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "websiteUrl": "https://github.com/AbstractGlitch/glitch-toolkit",
   "repository": {
     "url": "https://github.com/AbstractGlitch/glitch-toolkit",
@@ -14,7 +14,7 @@
     {
       "registryType": "pypi",
       "identifier": "glitch-toolkit",
-      "version": "0.1.3",
+      "version": "0.1.4",
       "transport": {
         "type": "stdio"
       },

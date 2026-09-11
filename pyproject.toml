@@ -23,7 +23,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "glitch-toolkit"
-version = "0.1.3"
+version = "0.1.4"
 description = "Install and verify bounded-autonomy practices in a repository worked on by AI agents"
 readme = "README.md"
 license = "Apache-2.0"

@@ -1,6 +1,21 @@
 # Releasing
 
-**0.1.3 is prepared and NOT released, and it exists because of a mistake.**
+**0.1.4 is prepared and NOT released.** What is in it is below.
+
+**0.1.3 was released on 2026-09-08**, and the line that stood here until
+2026-09-11 said it was not. It read, in bold, at the top of the release
+checklist, *"0.1.3 is prepared and NOT released"*. The index disagrees and the
+index is the authority: `0.1.0`, `0.1.1`, `0.1.2`, `0.1.3`, latest `0.1.3`, read
+from `https://pypi.org/pypi/glitch-toolkit/json` on 2026-09-11.
+
+That is worth more than a correction. It is this package's own corpus class —
+verifying the documentation instead of the system — sitting in the file somebody
+reads in the minutes before they upload something that can never be re-uploaded.
+It went stale the moment 0.1.3 shipped and nothing could contradict it, because
+nothing asked. The version below was determined by asking the index, not by
+reading this file, and the next one should be too.
+
+**0.1.3 exists because of a mistake.**
 The registry namespace is CASE SENSITIVE and follows the GitHub login exactly:
 the grant is `io.github.AbstractGlitch/*`. The entry was written
 `io.github.abstractglitch/...`, lowercased off a documentation example rather
@@ -69,6 +84,134 @@ paragraph is the honest statement of what the guard does and does not cover.
 
 This file is the checklist 0.1.0 went through and the record of what was decided
 before it.
+
+## 0.1.4 — the handover, and what was already verified
+
+Prepared on 2026-09-11 in a Linux container that deliberately holds no PyPI token. Everything below
+the line was done and its result is stated; everything above it is the owner's, because the token
+lives in `$HOME/.pypirc` on their machine and the mirror is outside this session's repository
+scope. **None of the owner steps have been performed. Do not read this section as a record that
+they were.**
+
+### Already done and verified here
+
+- Merged to `main` (fast-forward, `6f3395d`), so nothing unmerged becomes permanent.
+- The four places a version lives all say `0.1.4`: `pyproject.toml`, `src/glitch/__init__.py`,
+  `registry/server.json` (top level and the package entry), and the README's `mcp-name:` marker
+  matches `server.json`'s `name` character for character. The `dist` job's own consistency check
+  was run locally and reports no problems. **`src/glitch/__init__.py` is the one this file never
+  mentioned**; it was found by reading the workflow rather than this checklist.
+- `python -m build` produced both distributions. `twine check` PASSED on both.
+- The sdist carries `tests/run_all.py`, `LICENSE` and `NOTICE`.
+- The wheel says `License-Expression: Apache-2.0`, carries `LICENSE` and `NOTICE`, has no
+  `Private :: Do Not Upload`, and **carries the `mcp-name:` marker in the built METADATA**, not
+  only in the source README. That last one is what cost 0.1.2.
+- **Neither distribution contains CRLF, the sdist included.** That is new. 0.1.0 shipped CRLF in
+  all 21 wheel files and all 26 sdist files; 0.1.1 fixed the wheel and left three in the sdist
+  (`PKG-INFO`, `setup.cfg`, egg-info `PKG-INFO`) because setuptools generates them in text mode on
+  the Windows machine doing the building. Building on Linux removes all three. This file says the
+  real fix is to publish from CI so the checked artifact and the shipped artifact are the same
+  file; building here is not that, but it is the first build where the sdist is clean.
+- Dependency-free promise, as a delta rather than a census: `pip freeze` before and after
+  installing the wheel into an empty virtualenv differs by exactly one line, `glitch-toolkit`.
+- All three suites, run against the **built wheel** with the `[mcp]` extra installed:
+  **40 passed, 0 failed, 0 SKIPPED**, counted from the runner. This file's pre-upload list asks for
+  exactly that.
+- The headline change proved from the installed wheel in a fresh git repository, not from the
+  source tree: a plan whose step opens a pull request against a list, with no `**Checked**` line,
+  is refused and names the line it wants; the same plan with a dated `**Checked**` line passes and
+  issues a receipt.
+- `site/toolkit/` still byte-identical to `src/glitch/_assets/` and `src/glitch/cli.py`. The
+  version bump touched no shipped artifact, so the buyer's download did not move.
+- **Mirror pre-push inspection, done.** Every commit message the subtree push would carry public
+  was read for credentials, keys, customer data, revenue and campaign detail. Five keyword hits,
+  all benign: this file quoting its own prohibition list, a pull-request title token, and the word
+  "price" inside the cost-claim rule. `CORPUS.md` naming `client-acquisition-saas` and the rest is
+  a decision the owner confirmed on 2026-09-08 and is not to be undone.
+
+### The artefacts
+
+- `glitch_toolkit-0.1.4-py3-none-any.whl` — 80166 bytes, sha256 `737652f56dc59beb327662b73ceab2f5e05f942a0066decec4d8badaece72c8a`
+- `glitch_toolkit-0.1.4.tar.gz` — 94598 bytes, sha256 `a57e301295e502ede39820fbca5ba754a2e4e51c318e07c2ebb555a267dc4684`
+
+### Yours, in this order
+
+```powershell
+# 1. Upload. From the machine with the token in $HOME\.pypirc.
+twine upload dist/*
+
+# 2. BEFORE the registry step, open the project page and confirm the marker
+#    rendered in the description. The registry reads that page, not the file.
+#    https://pypi.org/project/glitch-toolkit/
+
+# 3. Publish the mirror. This session cannot: glitch-toolkit is outside its scope.
+git subtree push --prefix=glitch https://github.com/AbstractGlitch/glitch-toolkit.git main
+
+# 4. The registry entry.
+mcp-publisher publish
+
+# 5. Prove what a stranger actually does, from a clean virtualenv.
+pip install glitch-toolkit
+glitch install
+glitch status
+```
+
+If `twine upload` rejects the token, generate another rather than reaching for an account-scoped
+one to get unstuck. Nothing verifies a PyPI token except an upload, so the current one has been
+untested since 0.1.3.
+
+**After the upload, two files carry a number that will be wrong.** `CLAUDE.md` says 0.1.4 is
+prepared and not uploaded; the line above says the same. Both should be read off the index, not
+off memory, which is the whole reason the top of this file needed correcting today.
+
+## 0.1.4 — what is in it
+
+Sixteen commits touched `glitch/` after 0.1.3. Six of them changed files that
+land in the distribution, so this is a release rather than a tidy-up.
+
+**A third refusal in `plan_check.py`, and the reason it exists.** A step in a
+plan that reaches for something outside the repository — opens a pull request
+against it, lists on it, submits to it — and carries no dated `**Checked**` line
+saying what was asked of the target and what it answered, is refused. An
+undated `**Checked**` line is refused separately, because whether a repository
+accepts anything is true on a day rather than in general.
+
+It comes from 9 September: a repository was chosen as a listing target, its
+contributing guide read and quoted, its entry format derived, its categories
+compared, the list searched for duplicates. Four checks, four passes, every one
+against files from a CDN that serves them the same whether a repository is alive
+or archived. It had been archived since 1 August.
+
+**No network call, and that is the design rather than a limit of it.** The
+liveness check itself stays out of the package: `dependencies = []` is a promise
+and a call to a repository host would spend it. What ships is the refusal to
+plan around an unasked target, not the asking. The `PLAN.md` template carries
+the line and the example that matters: *their CONTRIBUTING.md says pull requests
+are welcome* is the description, *the API's `archived` field is false* is the
+thing.
+
+**A skip-detecting refusal in `gate_check.py`**, and the cost-claim refusal in
+`plan_check.py`, both from 8 September and both already described above under
+their own incidents.
+
+**`cli.py` gained the canaries for all of it** — every new refusal is exercised
+against a deliberately broken fixture on every `glitch check`, so an artifact
+that has stopped refusing fails rather than passes quietly.
+
+**One thing found by the suite rather than by review, worth carrying.** The new
+refusal also fired on the fixture that exists to prove the cost-claim refusal,
+because that fixture lists on a registry. Two defects in one fixture cannot
+prove which refusal is still working: gutting the cost list left the fixture
+rejected anyway, and the sabotage went unnoticed. `tests/test_cli.py` caught it.
+A red result for the wrong reason is indistinguishable from a red result for the
+right one, which is the same shape as the incident the release is about.
+
+**Carried forward, not fixed here.** The three underspecified MCP tool
+definitions below. They are listed as items for the next release and they are
+also, in the same breath, "not a reason to make a release". Fixing them in this
+one would falsify two texts that currently state the gaps exist — the published
+`/toolkit` page and `content/SHOW_HN_GLITCH_TOOLKIT.md` — and a release is the
+wrong vehicle for a change that needs two other files moved with it.
 
 ## 0.1.1 — why there is a second release so soon
 
@@ -253,7 +396,7 @@ careful push into it, and a public commit cannot be recalled.
 ```bash
 rm -rf build dist src/*.egg-info
 python -m build                      # sdist AND wheel, both are published
-python tests/run_all.py              # 38 tests, three suites
+python tests/run_all.py              # 40 tests, three suites, none skipped
 twine check dist/*
 twine upload dist/*
 ```
